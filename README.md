@@ -56,19 +56,31 @@ you can finish testing before you publish anything.
 
 ### 4. Publish on GitHub Pages
 
-```bash
-cd survey && git init && git add . && git commit -m "Add survey form"
+This repo pushes to the **`quotationyy`** GitHub account, which is not the default
+SSH identity on this machine. `~/.ssh/config` has a `github-alt` host alias
+pointing at `~/.ssh/id_ed25519_github_alt`, so the remote is:
+
+```
+git@github-alt:quotationyy/2026moonfestbbq.git
 ```
 
-Create an empty repo on GitHub, then:
+Check you are pushing as the right account — this must print `Hi quotationyy!`,
+**not** `Hi wenninghsu!` (the old key stays configured as a fallback, so a missing
+key shows up as the wrong name rather than an outright error):
 
 ```bash
-git remote add origin https://github.com/YOUR_NAME/YOUR_REPO.git && git push -u origin main
+ssh -T git@github-alt
+```
+
+Then:
+
+```bash
+git push -u origin main
 ```
 
 In the repo: **Settings ▸ Pages ▸ Source: Deploy from a branch**, branch `main`,
-folder `/ (root)`, Save. Your form is live at
-`https://YOUR_NAME.github.io/YOUR_REPO/` in a minute or two.
+folder `/ (root)`, Save. The form goes live at
+<https://quotationyy.github.io/2026moonfestbbq/> a minute or two later.
 
 > The repo must be **public** for Pages on a free account. `index.html` contains
 > no secrets — the `/exec` URL only accepts appends — so that's fine. Don't commit
