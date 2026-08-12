@@ -341,22 +341,22 @@ const ITEMS = [
     label: "How will you be joining us?｜這次會怎麼參加呢？",
     options: ["Attending solo｜自己參加", "Bringing a +1｜攜伴一位"] },
 
+  /* 這四題（同行者三欄＋車牌）跟原本的 Google 表單一樣「永遠顯示、
+     全部選填」。若想改成選了才展開，加上例如
+       showIf: { id: "joining", equals: "Bringing a +1｜攜伴一位" }
+     applyConditions() 會自動處理，隱藏的題目不驗證、送出為空值。 */
   { kind: "notice", text:
-    "If you're bringing a +1, please complete the details below.\n攜伴者請填寫以下資訊。",
-    showIf: { id: "joining", equals: "Bringing a +1｜攜伴一位" } },
+    "If you're bringing a +1, please complete the details below.\n攜伴者請填寫以下資訊。" },
 
-  { id: "guest_name",  type: "text",  label: "Guest Name｜同行者姓名",
-    showIf: { id: "joining", equals: "Bringing a +1｜攜伴一位" } },
-  { id: "guest_phone", type: "tel",   label: "Guest Phone Number｜同行者電話",
-    showIf: { id: "joining", equals: "Bringing a +1｜攜伴一位" } },
-  { id: "guest_email", type: "email", label: "Guest Email｜同行者 Email",
-    showIf: { id: "joining", equals: "Bringing a +1｜攜伴一位" } },
+  { id: "guest_name",  type: "text",  label: "Guest Name｜同行者姓名" },
+  { id: "guest_phone", type: "tel",   label: "Guest Phone Number｜同行者電話" },
+  { id: "guest_email", type: "email", label: "Guest Email｜同行者 Email" },
 
   { kind: "section", title: "A Few More Details｜再告訴我們一些資訊" },
 
   { id: "dietary", type: "textarea",
     label: "Dietary Preferences & Allergies｜飲食需求與過敏資訊",
-    desc: "Please let us know if you or your +1 have any food allergies, dietary restrictions, or ingredients you prefer not to eat.\n如果你或同行者有任何食物過敏、飲食限制或不吃的食材，請在這裡告訴我們。",
+    desc: "Please let us know if you or your +1 have any food allergies, dietary restrictions, or ingredients you prefer not to eat.\n如果你或同行者有任何食物過敏、飲食限制或不吃的食材，請在這裡告訴我們。\n\ne.g. Vegetarian / No beef / Seafood allergy / None",
     placeholder: "e.g. Vegetarian / No beef / Seafood allergy / None" },
 
   /* ⚠️ 收款帳號原本的 Google 表單完全沒有提到，填的人無法匯款。
@@ -377,8 +377,7 @@ const ITEMS = [
   { id: "plate", type: "text",
     label: "License Plate Number｜車牌號碼",
     desc: "If you require parking, please enter your license plate number.\n如需停車位，請填寫完整車牌號碼。",
-    placeholder: "ABC-1234",
-    showIf: { id: "parking", notEquals: "No parking needed｜不需要" } }
+    placeholder: "ABC-1234" }
 ];
 
 /* 介面文字。要改語言只改這裡。 */
