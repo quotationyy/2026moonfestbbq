@@ -159,61 +159,88 @@ function authorize_(payload) {
 }
 
 function handleRead_() {
-  var sheet = getSheet_();
-  var last  = sheet.getLastRow();
-  var width = Math.max(sheet.getLastColumn(), 1);
-  var headers = getHeaders_(sheet);
-  var rows = last > 1
-    ? sheet.getRange(2, 1, last - 1, width).getDisplayValues()
-    : [];
-
-  return json_({ ok: true, headers: headers, rows: rows, count: rows.length });
+  return withRows_(getSheet_(), { ok: true });
 }
 
 /**
- * Archive one response.
+ * Attach the current table to a response.
  *
- * Row numbers shift as soon as anything is deleted, so a stale dashboard
- * could otherwise delete the wrong person. The caller must send back the
- * timestamp and name it believes are on that row; if they do not match, the
- * delete is refused and the client is told to reload.
+ * Every Apps Script invocation costs the caller 3-5 seconds, almost all of it
+ * server overhead, so a delete that made the client re-read afterwards took
+ * twice as long as it needed to. Reading the sheet again inside the same
+ * execution is nearly free by comparison.
+ */
+function withRows_(sheet, base) {
+  var last  = sheet.getLastRow();
+  var width = Math.max(sheet.getLastColumn(), 1);
+  var rows  = last > 1
+    ? sheet.getRange(2, 1, last - 1, width).getDisplayValues()
+    : [];
+  base.headers   = getHeaders_(sheet);
+  base.rows      = rows;
+  base.count     = rows.length;
+  base.remaining = rows.length;
+  return json_(base);
+}
+
+/**
+ * Archive one response, identified by its timestamp and name rather than by
+ * its row number.
+ *
+ * Row numbers shift the moment anything is deleted, so identifying a row by
+ * position meant a dashboard could only safely delete one row per reload --
+ * and each reload costs the user several seconds. Matching on content instead
+ * makes deletes order-independent: several can be in flight at once, in any
+ * order, and each still finds its own row.
+ *
+ * Deleting something already gone counts as success, so a double click or a
+ * retry is harmless. Two rows matching the same fingerprint is refused rather
+ * than guessed at.
  *
  * The row is copied to the Deleted sheet before removal, so a mistake is
  * recoverable -- nothing is permanently destroyed here.
  */
 function handleDelete_(payload) {
-  var rowNum = Number(payload.row);
-  var sheet  = getSheet_();
-  var last   = sheet.getLastRow();
-  var width  = Math.max(sheet.getLastColumn(), 1);
+  var sheet   = getSheet_();
+  var headers = getHeaders_(sheet);
+  var last    = sheet.getLastRow();
+  var width   = Math.max(sheet.getLastColumn(), 1);
 
-  if (!rowNum || rowNum < 2 || rowNum > last) {
-    return json_({ ok: false, code: 'row_missing', stale: true,
-      error: 'That row no longer exists.' });
+  // `verify` is the older field name for the same thing.
+  var match  = payload.match || payload.verify || {};
+  var wantTs = String(match.timestamp || '');
+  var wantNm = String(match.name || '');
+  var iTs = headers.indexOf('timestamp');
+  var iNm = headers.indexOf('name');
+
+  if (!wantTs && !wantNm) {
+    return json_({ ok: false, code: 'bad_request',
+      error: 'Nothing to match on: send match.timestamp and match.name.' });
   }
 
-  var headers = getHeaders_(sheet);
-  var values  = sheet.getRange(rowNum, 1, 1, width).getDisplayValues()[0];
-  var verify  = payload.verify || {};
+  var values = last > 1
+    ? sheet.getRange(2, 1, last - 1, width).getDisplayValues()
+    : [];
 
-  var actual = {
-    timestamp: String(values[headers.indexOf('timestamp')] || ''),
-    name:      String(values[headers.indexOf('name')] || '')
-  };
-  if (String(verify.timestamp || '') !== actual.timestamp ||
-      String(verify.name || '')      !== actual.name) {
-    return json_({ ok: false, code: 'stale_row', stale: true,
-      actualName: actual.name, error: 'Row changed since the page loaded.' });
+  var hits = [];
+  for (var i = 0; i < values.length; i++) {
+    if (String(values[i][iTs] || '') === wantTs &&
+        String(values[i][iNm] || '') === wantNm) hits.push(i);
+  }
+
+  if (hits.length === 0) {
+    return withRows_(sheet, { ok: true, deleted: wantNm, alreadyGone: true });
+  }
+  if (hits.length > 1) {
+    return json_({ ok: false, code: 'ambiguous', matches: hits.length,
+      error: 'More than one row matches; refusing to guess which to delete.' });
   }
 
   // Copy to the archive sheet first, so a failure here aborts before removal.
-  var trash = getTrashSheet_(headers);
-  trash.appendRow([new Date()].concat(values));
+  getTrashSheet_(headers).appendRow([new Date()].concat(values[hits[0]]));
+  sheet.deleteRow(hits[0] + 2);
 
-  sheet.deleteRow(rowNum);
-
-  return json_({ ok: true, deleted: actual.name,
-                 remaining: Math.max(sheet.getLastRow() - 1, 0) });
+  return withRows_(sheet, { ok: true, deleted: wantNm });
 }
 
 /** The archive sheet, created on first use with a deleted_at column. */

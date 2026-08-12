@@ -238,13 +238,17 @@ function errText(out) {
 
 /* ---------- Auth + fetch ---------- */
 
-async function load(password) {
+async function post(body) {
   const res = await fetch(SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "read", password })
+    body: JSON.stringify(body)
   });
-  const out = await res.json();
+  return res.json();
+}
+
+async function load(password) {
+  const out = await post({ action: "read", password });
 
   // An older deployment has no "read" action, so it treats this as a
   // submission and answers {ok:true,row:N} — having just written a blank
@@ -403,47 +407,61 @@ function showDash() {
 
 /* ---------- Delete one response ---------- */
 
+/* Each Apps Script call costs 3-5s of server overhead, so waiting for the
+   round trip before touching the table made every click feel broken. The row
+   is dropped from the local table immediately and the request runs behind it;
+   a failure resyncs from the server and says so. Because the server matches
+   on timestamp+name rather than row number, several deletes may be in flight
+   at once without any risk of hitting the wrong row. */
+let pending = 0;
+
 async function remove(btn) {
-  const { row, name, ts } = btn.dataset;
+  const { name, ts } = btn.dataset;
   const who = name || "（未填姓名）";
   if (!confirm(
     `確定要刪除「${who}」的報名嗎？\n\n` +
     `這筆資料會移到試算表的「Deleted」工作表保留，不會真的消失，` +
     `所以刪錯還救得回來。`)) return;
 
-  const was = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "刪除中…";
+  const iName = col(DATA.headers, "name");
+  const iTs   = col(DATA.headers, "timestamp");
+  DATA = { ...DATA,
+    rows: DATA.rows.filter(r => !((r[iName] ?? "") === name && (r[iTs] ?? "") === ts)) };
+  showDash();
+
+  pending++;
+  toast(pending > 1 ? `刪除中… (${pending})` : `刪除「${who}」…`);
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        action: "delete", password: PASSWORD,
-        row: Number(row),
-        verify: { name, timestamp: ts }   // server refuses if this row moved
-      })
+    const out = await post({
+      action: "delete", password: PASSWORD,
+      match: { name, timestamp: ts },
+      // Older deployments identify the row by number instead.
+      row: Number(btn.dataset.row), verify: { name, timestamp: ts }
     });
-    const out = await res.json();
     if (!out.ok) throw new Error(errText(out));
 
-    // A deployment without the delete action treats this as a submission and
-    // answers {ok:true,row:N}, having just appended a blank row. Never report
-    // that as a successful delete — say what happened and how to undo it.
-    if (typeof out.remaining !== "number") {
+    if (Array.isArray(out.rows)) {
+      DATA = { headers: out.headers, rows: out.rows };   // authoritative
+      showDash();
+    } else if (typeof out.remaining !== "number") {
+      // A deployment predating the delete action treated this as a submission.
       throw new Error(
         "Apps Script 是舊版、不支援刪除 —— 這次請求被當成一筆新報名寫進去了。" +
-        (out.row ? `請到 Sheet 刪掉第 ${out.row} 列。` : "") +
-        "然後重新部署：部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本。");
+        (out.row ? `請到 Sheet 刪掉第 ${out.row} 列。` : "") + REDEPLOY);
+    } else {
+      const fresh = await load(PASSWORD);      // old server: no rows attached
+      if (fresh.ok) { DATA = fresh; showDash(); }
     }
-
-    toast(`已刪除「${out.deleted || who}」，剩 ${out.remaining} 筆`);
-    const fresh = await load(PASSWORD);
-    if (fresh.ok) { DATA = fresh; showDash(); }
+    if (--pending === 0) {
+      toast(out.alreadyGone
+        ? `「${who}」原本就已經不在了`
+        : `已刪除「${who}」，剩 ${DATA.rows.length} 筆`);
+    }
   } catch (e) {
-    btn.disabled = false;
-    btn.textContent = was;
+    pending--;
     toast(e.message, true);
+    const fresh = await load(PASSWORD).catch(() => null);   // put the row back
+    if (fresh && fresh.ok) { DATA = fresh; showDash(); }
   }
 }
 
