@@ -122,6 +122,29 @@ td.wrap-cell { white-space: normal; min-width: 14rem; }
 }
 .tag.car { background: hsl(var(--primary) / 0.14); color: hsl(var(--primary)); }
 .empty { padding: 3rem 1rem; text-align: center; color: hsl(var(--muted-foreground)); }
+button.del {
+  height: 1.75rem; padding: 0 0.625rem; font-size: 0.75rem; font-weight: 600;
+  background: transparent; color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 0.3rem);
+}
+button.del:hover:not(:disabled) {
+  opacity: 1;
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.08);
+}
+td.act { text-align: right; }
+.toast {
+  position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%);
+  max-width: calc(100vw - 2rem);
+  background: hsl(var(--foreground)); color: hsl(var(--background));
+  padding: 0.75rem 1.125rem; border-radius: calc(var(--radius) - 0.15rem);
+  font-size: 0.875rem; font-weight: 500;
+  box-shadow: 0 8px 24px hsl(240 10% 3.9% / 0.28);
+  z-index: 50;
+}
+.toast.bad { background: hsl(var(--destructive)); color: #fff; }
 ul.list { margin: 0; padding-left: 1.125rem; font-size: 0.875rem; }
 ul.list li { margin-bottom: 0.375rem; }
 .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
@@ -322,12 +345,18 @@ function showDash() {
           <th>#</th>
           ${shown.map(([, t]) => `<th>${esc(t)}</th>`).join("")}
           ${extra.map(h => `<th>${esc(h)}</th>`).join("")}
+          <th></th>
         </tr></thead>
         <tbody>
           ${rows.map((r, i) => `<tr>
             <td class="mono">${i + 1}</td>
             ${shown.map(([id]) => cell(id, r[col(headers, id)])).join("")}
             ${extra.map(h => `<td>${esc(r[col(headers, h)])}</td>`).join("")}
+            <td class="act"><button class="del"
+              data-row="${i + 2}"
+              data-name="${esc(r[col(headers, "name")] ?? "")}"
+              data-ts="${esc(r[col(headers, "timestamp")] ?? "")}"
+              >刪除</button></td>
           </tr>`).join("")}
         </tbody>
       </table></div>` : `<div class="card empty">還沒有人報名。</div>`}
@@ -346,6 +375,53 @@ function showDash() {
     location.reload();
   };
   $("csv").onclick = () => downloadCsv(headers, rows);
+
+  dash.querySelectorAll("button.del").forEach(b => b.onclick = () => remove(b));
+}
+
+/* ---------- Delete one response ---------- */
+
+async function remove(btn) {
+  const { row, name, ts } = btn.dataset;
+  const who = name || "（未填姓名）";
+  if (!confirm(
+    `確定要刪除「${who}」的報名嗎？\n\n` +
+    `這筆資料會移到試算表的「Deleted」工作表保留，不會真的消失，` +
+    `所以刪錯還救得回來。`)) return;
+
+  const was = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "刪除中…";
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "delete", password: PASSWORD,
+        row: Number(row),
+        verify: { name, timestamp: ts }   // server refuses if this row moved
+      })
+    });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error || "刪除失敗");
+
+    toast(`已刪除「${out.deleted || who}」，剩 ${out.remaining} 筆`);
+    const fresh = await load(PASSWORD);
+    if (fresh.ok) { DATA = fresh; showDash(); }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = was;
+    toast(e.message, true);
+  }
+}
+
+function toast(text, bad) {
+  document.querySelector(".toast")?.remove();
+  const el = document.createElement("div");
+  el.className = "toast" + (bad ? " bad" : "");
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), bad ? 6000 : 3000);
 }
 
 function cell(id, v) {

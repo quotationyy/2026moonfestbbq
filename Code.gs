@@ -1,10 +1,11 @@
 /**
  * Survey backend — Google Apps Script Web App.
  *
- * Two actions, both over POST:
+ * Three actions, all over POST:
  *
  *   (no action) / "submit"  append one response row  — public
  *   "read"                  return every response    — password required
+ *   "delete"                archive one response     — password required
  *
  * The admin password is NOT in this file. This file lives in a public
  * GitHub repository, so anything written here is world-readable. The
@@ -15,6 +16,7 @@
  */
 
 var SHEET_NAME   = 'Responses';
+var TRASH_NAME   = 'Deleted';      // deleted rows are moved here, not destroyed
 var PW_PROPERTY  = 'ADMIN_PASSWORD';
 
 // Brute-force limits. A wrong password always costs the caller FAIL_DELAY_MS,
@@ -35,7 +37,7 @@ function doPost(e) {
     // Two people submitting at the same moment must not race on the header row.
     lock.waitLock(30000);
   } catch (err) {
-    return json_({ ok: false, error: 'Server busy, please retry.' });
+    return json_({ ok: false, error: '伺服器忙碌中，請稍後重試。' });
   }
 
   try {
@@ -43,8 +45,14 @@ function doPost(e) {
       return json_({ ok: false, error: 'Empty request body.' });
     }
     var payload = JSON.parse(e.postData.contents);
-    return payload.action === 'read' ? handleRead_(payload)
-                                     : handleSubmit_(payload);
+    var action = payload.action;
+
+    if (action === 'read' || action === 'delete') {
+      var refusal = authorize_(payload);
+      if (refusal) return refusal;
+      return action === 'read' ? handleRead_() : handleDelete_(payload);
+    }
+    return handleSubmit_(payload);
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
   } finally {
@@ -101,21 +109,25 @@ function handleSubmit_(payload) {
 /* Admin: read every response, password required                       */
 /* ------------------------------------------------------------------ */
 
-function handleRead_(payload) {
+/**
+ * Gate for every admin action. Returns a refusal response to send back, or
+ * null when the caller may proceed.
+ */
+function authorize_(payload) {
   var props = PropertiesService.getScriptProperties();
   var expected = props.getProperty(PW_PROPERTY);
 
   if (!expected) {
     return json_({ ok: false, error:
-      'ADMIN_PASSWORD is not set. Add it under Project Settings ▸ Script Properties.' });
+      '尚未設定 ADMIN_PASSWORD。請到「專案設定 ▸ 指令碼屬性」新增。' });
   }
 
   // Refuse outright while locked out, without even looking at the password.
   var until = Number(props.getProperty('lockout_until') || 0);
   if (until && Date.now() < until) {
     return json_({ ok: false, locked: true, error:
-      'Too many wrong attempts. Try again in ' +
-      Math.ceil((until - Date.now()) / 60000) + ' minutes.' });
+      '密碼錯誤次數過多，請於 ' +
+      Math.ceil((until - Date.now()) / 60000) + ' 分鐘後再試。' });
   }
 
   if (!constantTimeEquals_(String(payload.password || ''), expected)) {
@@ -128,12 +140,15 @@ function handleRead_(payload) {
     }
     // Slow every guess down; a scripted attack cannot go faster than this.
     Utilities.sleep(FAIL_DELAY_MS);
-    return json_({ ok: false, error: 'Wrong password.' });
+    return json_({ ok: false, error: '密碼錯誤。' });
   }
 
   props.deleteProperty('fail_count');
   props.deleteProperty('lockout_until');
+  return null;
+}
 
+function handleRead_() {
   var sheet = getSheet_();
   var last  = sheet.getLastRow();
   var width = Math.max(sheet.getLastColumn(), 1);
@@ -143,6 +158,69 @@ function handleRead_(payload) {
     : [];
 
   return json_({ ok: true, headers: headers, rows: rows, count: rows.length });
+}
+
+/**
+ * Archive one response.
+ *
+ * Row numbers shift as soon as anything is deleted, so a stale dashboard
+ * could otherwise delete the wrong person. The caller must send back the
+ * timestamp and name it believes are on that row; if they do not match, the
+ * delete is refused and the client is told to reload.
+ *
+ * The row is copied to the Deleted sheet before removal, so a mistake is
+ * recoverable — nothing is permanently destroyed here.
+ */
+function handleDelete_(payload) {
+  var rowNum = Number(payload.row);
+  var sheet  = getSheet_();
+  var last   = sheet.getLastRow();
+  var width  = Math.max(sheet.getLastColumn(), 1);
+
+  if (!rowNum || rowNum < 2 || rowNum > last) {
+    return json_({ ok: false, stale: true,
+      error: '這一列已不存在，請重新載入後再試。' });
+  }
+
+  var headers = getHeaders_(sheet);
+  var values  = sheet.getRange(rowNum, 1, 1, width).getDisplayValues()[0];
+  var verify  = payload.verify || {};
+
+  var actual = {
+    timestamp: String(values[headers.indexOf('timestamp')] || ''),
+    name:      String(values[headers.indexOf('name')] || '')
+  };
+  if (String(verify.timestamp || '') !== actual.timestamp ||
+      String(verify.name || '')      !== actual.name) {
+    return json_({ ok: false, stale: true, error:
+      '這一列的資料在頁面載入後已變動（該列目前是「' + actual.name +
+      '」）。沒有刪除任何資料，請重新載入後再試。' });
+  }
+
+  // Copy to the archive sheet first, so a failure here aborts before removal.
+  var trash = getTrashSheet_(headers);
+  trash.appendRow([new Date()].concat(values));
+
+  sheet.deleteRow(rowNum);
+
+  return json_({ ok: true, deleted: actual.name,
+                 remaining: Math.max(sheet.getLastRow() - 1, 0) });
+}
+
+/** The archive sheet, created on first use with a deleted_at column. */
+function getTrashSheet_(headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var trash = ss.getSheetByName(TRASH_NAME);
+  if (!trash) {
+    trash = ss.insertSheet(TRASH_NAME);
+  }
+  if (trash.getLastRow() === 0) {
+    var head = ['deleted_at'].concat(headers);
+    trash.getRange(1, 1, 1, head.length).setValues([head]);
+    trash.getRange(1, 1, 1, head.length).setFontWeight('bold');
+    trash.setFrozenRows(1);
+  }
+  return trash;
 }
 
 /** Compare without leaking length or position through timing. */

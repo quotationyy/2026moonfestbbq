@@ -131,8 +131,9 @@ New version ▸ Deploy**, or the live endpoint keeps running the old code. Editi
 ## The admin page
 
 `admin.html` shows every response — headcount, parking counts, dietary notes, a
-full table, CSV export. It is served from the same public GitHub Pages site, so
-it is built on one rule: **the page holds no secret and no data.**
+full table, CSV export, and per-row delete. It is served from the same public
+GitHub Pages site, so it is built on one rule: **the page holds no secret and
+no data.**
 
 A password typed into it is POSTed to Apps Script, which compares it against a
 Script Property and only then returns rows. Reading `admin.html`'s source, or
@@ -162,6 +163,17 @@ Changing a Script Property alone needs no redeploy; changing `Code.gs` does.
 | ⚠️ | One shared password — it cannot be revoked for one person only |
 | ⚠️ | The lockout is global, so someone could deliberately lock admins out for 15 minutes |
 | ⚠️ | Anyone holding the password sees every response, including phone numbers |
+
+### Deleting a response
+
+Delete moves the row to a **`Deleted`** sheet (created on first use, with a
+`deleted_at` column) and only then removes it from `Responses`. Nothing is
+permanently destroyed, so a misclick is recoverable — copy the row back.
+
+Row numbers shift the moment anything is deleted, so the dashboard sends the
+name and timestamp it believes are on that row and the server refuses the
+delete if they do not match. Two admins working from stale tabs therefore
+cannot delete each other's records by accident.
 
 For per-person access that you can revoke individually, share the Google Sheet
 with each admin's Google account instead (**Share** in the spreadsheet). That
