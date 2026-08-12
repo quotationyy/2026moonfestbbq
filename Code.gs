@@ -1,15 +1,28 @@
 /**
  * Survey backend — Google Apps Script Web App.
  *
- * Receives a POST from survey/index.html and appends one row to the
- * spreadsheet this script is bound to. Columns are created automatically
- * from the question ids, so adding a question to the form later just adds
- * a new column instead of breaking anything.
+ * Two actions, both over POST:
+ *
+ *   (no action) / "submit"  append one response row  — public
+ *   "read"                  return every response    — password required
+ *
+ * The admin password is NOT in this file. This file lives in a public
+ * GitHub repository, so anything written here is world-readable. The
+ * password is read from a Script Property named ADMIN_PASSWORD, which is
+ * stored on Google's side and never enters git. See README.md.
  *
  * Deployment steps are in README.md.
  */
 
-var SHEET_NAME = 'Responses';
+var SHEET_NAME   = 'Responses';
+var PW_PROPERTY  = 'ADMIN_PASSWORD';
+
+// Brute-force limits. A wrong password always costs the caller FAIL_DELAY_MS,
+// and after MAX_FAILS wrong tries the read action is refused for
+// LOCKOUT_MINUTES regardless of what is sent.
+var FAIL_DELAY_MS   = 1500;
+var MAX_FAILS       = 8;
+var LOCKOUT_MINUTES = 15;
 
 /** Visiting the /exec URL in a browser hits this — a quick "is it live?" check. */
 function doGet() {
@@ -29,54 +42,122 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) {
       return json_({ ok: false, error: 'Empty request body.' });
     }
-
     var payload = JSON.parse(e.postData.contents);
-
-    // Honeypot: real users never see that field, bots fill it in.
-    // Answer 200/ok so the bot has nothing to learn, but store nothing.
-    if (payload._hp) return json_({ ok: true });
-
-    var answers = payload.answers || {};
-    var meta = payload.meta || {};
-
-    var sheet = getSheet_();
-    var headers = getHeaders_(sheet);
-
-    // Add a column for any question id we haven't seen before.
-    var incoming = Object.keys(answers);
-    var added = [];
-    for (var i = 0; i < incoming.length; i++) {
-      if (headers.indexOf(incoming[i]) === -1) added.push(incoming[i]);
-    }
-    if (added.length) {
-      headers = headers.concat(added);
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
-      sheet.setFrozenRows(1);
-    }
-
-    // Build the row in header order so columns always line up.
-    var row = new Array(headers.length).fill('');
-    var put = function (header, value) {
-      var at = headers.indexOf(header);
-      if (at !== -1) row[at] = value;   // ignore columns the user removed
-    };
-    put('timestamp', new Date());
-    put('submitted_at', meta.submittedAt || '');
-    put('source_page', meta.page || '');
-    for (var j = 0; j < incoming.length; j++) {
-      put(incoming[j], answers[incoming[j]]);
-    }
-
-    sheet.appendRow(row);
-    return json_({ ok: true, row: sheet.getLastRow() });
-
+    return payload.action === 'read' ? handleRead_(payload)
+                                     : handleSubmit_(payload);
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
   } finally {
     lock.releaseLock();
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Public: append a response                                           */
+/* ------------------------------------------------------------------ */
+
+function handleSubmit_(payload) {
+  // Honeypot: real users never see that field, bots fill it in.
+  // Answer 200/ok so the bot has nothing to learn, but store nothing.
+  if (payload._hp) return json_({ ok: true });
+
+  var answers = payload.answers || {};
+  var meta    = payload.meta || {};
+
+  var sheet   = getSheet_();
+  var headers = getHeaders_(sheet);
+
+  // Add a column for any question id we haven't seen before.
+  var incoming = Object.keys(answers);
+  var added = [];
+  for (var i = 0; i < incoming.length; i++) {
+    if (headers.indexOf(incoming[i]) === -1) added.push(incoming[i]);
+  }
+  if (added.length) {
+    headers = headers.concat(added);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+
+  // Build the row in header order so columns always line up.
+  var row = new Array(headers.length).fill('');
+  var put = function (header, value) {
+    var at = headers.indexOf(header);
+    if (at !== -1) row[at] = value;   // ignore columns the user removed
+  };
+  put('timestamp', new Date());
+  put('submitted_at', meta.submittedAt || '');
+  put('source_page', meta.page || '');
+  for (var j = 0; j < incoming.length; j++) {
+    put(incoming[j], answers[incoming[j]]);
+  }
+
+  sheet.appendRow(row);
+  return json_({ ok: true, row: sheet.getLastRow() });
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin: read every response, password required                       */
+/* ------------------------------------------------------------------ */
+
+function handleRead_(payload) {
+  var props = PropertiesService.getScriptProperties();
+  var expected = props.getProperty(PW_PROPERTY);
+
+  if (!expected) {
+    return json_({ ok: false, error:
+      'ADMIN_PASSWORD is not set. Add it under Project Settings ▸ Script Properties.' });
+  }
+
+  // Refuse outright while locked out, without even looking at the password.
+  var until = Number(props.getProperty('lockout_until') || 0);
+  if (until && Date.now() < until) {
+    return json_({ ok: false, locked: true, error:
+      'Too many wrong attempts. Try again in ' +
+      Math.ceil((until - Date.now()) / 60000) + ' minutes.' });
+  }
+
+  if (!constantTimeEquals_(String(payload.password || ''), expected)) {
+    var fails = Number(props.getProperty('fail_count') || 0) + 1;
+    props.setProperty('fail_count', String(fails));
+    if (fails >= MAX_FAILS) {
+      props.setProperty('lockout_until',
+        String(Date.now() + LOCKOUT_MINUTES * 60000));
+      props.setProperty('fail_count', '0');
+    }
+    // Slow every guess down; a scripted attack cannot go faster than this.
+    Utilities.sleep(FAIL_DELAY_MS);
+    return json_({ ok: false, error: 'Wrong password.' });
+  }
+
+  props.deleteProperty('fail_count');
+  props.deleteProperty('lockout_until');
+
+  var sheet = getSheet_();
+  var last  = sheet.getLastRow();
+  var width = Math.max(sheet.getLastColumn(), 1);
+  var headers = getHeaders_(sheet);
+  var rows = last > 1
+    ? sheet.getRange(2, 1, last - 1, width).getDisplayValues()
+    : [];
+
+  return json_({ ok: true, headers: headers, rows: rows, count: rows.length });
+}
+
+/** Compare without leaking length or position through timing. */
+function constantTimeEquals_(a, b) {
+  if (a.length !== b.length) return false;
+  var diff = 0;
+  for (var i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sheet helpers                                                       */
+/* ------------------------------------------------------------------ */
 
 /** The response sheet, created with its fixed leading columns if missing. */
 function getSheet_() {

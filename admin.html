@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>報名管理｜中秋卡肉趴</title>
+<style>
+/* Same shadcn/ui token system as the signup form. */
+:root {
+  --background: 0 0% 100%;      --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;            --card-foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;      --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;       --input: 240 5.9% 90%;
+  --primary: 22 92% 46%;        --primary-foreground: 0 0% 100%;
+  --ring: 22 92% 46%;           --destructive: 0 72% 51%;
+  --success: 142 71% 35%;       --radius: 0.65rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: 240 10% 3.9%;   --foreground: 0 0% 98%;
+    --card: 240 10% 6%;           --card-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;      --muted-foreground: 240 5% 64.9%;
+    --border: 240 3.7% 17%;       --input: 240 3.7% 22%;
+    --primary: 25 95% 53%;        --primary-foreground: 0 0% 100%;
+    --ring: 25 95% 53%;           --destructive: 0 63% 57%;
+    --success: 142 65% 45%;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 1rem 5rem;
+  background: hsl(var(--background)); color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI",
+               "PingFang TC", "Noto Sans TC", sans-serif;
+  font-size: 0.9375rem; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 72rem; margin: 0 auto; }
+.gate { max-width: 24rem; margin: 0 auto; padding-top: 5rem; }
+
+.card {
+  background: hsl(var(--card)); border: 1px solid hsl(var(--border));
+  border-radius: var(--radius); padding: 1.25rem; margin-bottom: 0.875rem;
+  box-shadow: 0 1px 2px 0 hsl(240 10% 3.9% / 0.04);
+}
+h1 { margin: 0 0 0.375rem; font-size: 1.375rem; font-weight: 800; letter-spacing: -0.02em; }
+.sub { margin: 0 0 1.25rem; color: hsl(var(--muted-foreground)); font-size: 0.875rem; }
+label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+input[type=password] {
+  width: 100%; font: inherit; font-size: 0.9375rem; min-height: 2.5rem;
+  color: hsl(var(--foreground)); background: hsl(var(--background));
+  border: 1px solid hsl(var(--input)); border-radius: calc(var(--radius) - 0.2rem);
+  padding: 0.5rem 0.75rem;
+}
+input:focus-visible {
+  outline: none; border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.18);
+}
+button {
+  font: inherit; font-size: 0.9375rem; font-weight: 600;
+  height: 2.5rem; padding: 0 1rem; border: 0;
+  border-radius: calc(var(--radius) - 0.2rem);
+  background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+  cursor: pointer;
+}
+button.ghost {
+  background: transparent; color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+}
+button:hover:not(:disabled) { opacity: 0.9; }
+button:disabled { opacity: 0.5; cursor: default; }
+.full { width: 100%; margin-top: 1rem; }
+.err {
+  margin-top: 0.75rem; font-size: 0.875rem; font-weight: 500;
+  color: hsl(var(--destructive));
+}
+.note { margin-top: 1rem; font-size: 0.8125rem; color: hsl(var(--muted-foreground)); }
+
+/* ---------- Dashboard ---------- */
+.bar {
+  display: flex; flex-wrap: wrap; gap: 0.625rem;
+  align-items: center; justify-content: space-between;
+  padding: 1.5rem 0 1rem;
+}
+.bar h1 { margin: 0; }
+.bar .tools { display: flex; gap: 0.5rem; }
+.stats {
+  display: grid; gap: 0.875rem; margin-bottom: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+.stat { padding: 1rem 1.125rem; }
+.stat .k {
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
+  color: hsl(var(--muted-foreground)); text-transform: none;
+}
+.stat .v {
+  font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.15; margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+.stat .v small { font-size: 0.875rem; font-weight: 600; color: hsl(var(--muted-foreground)); }
+.stat.hot .v { color: hsl(var(--primary)); }
+
+h2 { font-size: 1.0625rem; font-weight: 700; margin: 1.75rem 0 0.75rem; }
+.scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid hsl(var(--border)); }
+table { border-collapse: collapse; width: 100%; font-size: 0.8125rem; }
+th, td {
+  text-align: left; padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border)); white-space: nowrap;
+}
+th {
+  background: hsl(var(--muted)); font-weight: 600; font-size: 0.75rem;
+  position: sticky; top: 0;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: hsl(var(--muted) / 0.5); }
+td.wrap-cell { white-space: normal; min-width: 14rem; }
+.tag {
+  display: inline-block; padding: 0.0625rem 0.5rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 600;
+  background: hsl(var(--muted)); color: hsl(var(--foreground));
+}
+.tag.car { background: hsl(var(--primary) / 0.14); color: hsl(var(--primary)); }
+.empty { padding: 3rem 1rem; text-align: center; color: hsl(var(--muted-foreground)); }
+ul.list { margin: 0; padding-left: 1.125rem; font-size: 0.875rem; }
+ul.list li { margin-bottom: 0.375rem; }
+.mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Password gate -->
+  <div id="gate" class="gate">
+    <div class="card">
+      <h1>報名管理</h1>
+      <p class="sub">中秋卡肉趴 · 僅限主辦人</p>
+      <form id="gateForm">
+        <label for="pw">管理密碼</label>
+        <input type="password" id="pw" autocomplete="current-password"
+               autofocus placeholder="••••••••••">
+        <button type="submit" class="full" id="go">進入</button>
+        <div class="err" id="gateErr" hidden></div>
+      </form>
+      <p class="note">
+        密碼由伺服器端驗證，這個頁面本身不含密碼也不含任何報名資料。
+        連續輸錯 8 次會鎖 15 分鐘。
+      </p>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dash" hidden></div>
+</div>
+
+<script>
+/* 與報名表同一個 Apps Script 端點。 */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp-tErARlbGJ30wrcv4yZpr_0lbvy4uhRp2IzFeYQjfJq9HI2Tvf3tMaK1wBF8R2lk/exec";
+
+const PRICE_PER_PERSON = 1500;
+
+/* Sheet 欄位 → 表格標題。沒列到的欄位會用原始欄位名顯示。 */
+const COLS = [
+  ["timestamp",      "報名時間"],
+  ["name",           "姓名"],
+  ["phone",          "電話"],
+  ["email",          "Email"],
+  ["joining",        "參加方式"],
+  ["guest_name",     "同行者"],
+  ["guest_phone",    "同行者電話"],
+  ["guest_email",    "同行者 Email"],
+  ["dietary",        "飲食需求"],
+  ["transfer_last5", "後五碼"],
+  ["parking",        "停車"],
+  ["plate",          "車牌"]
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+/* sessionStorage throws outright on an opaque origin (a data: URL) and in
+   some strict privacy modes. Remembering the password across a reload is a
+   convenience, so degrade to not remembering rather than breaking the page. */
+const store = {
+  get(k)    { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); }    catch {} },
+  del(k)    { try { sessionStorage.removeItem(k); }    catch {} }
+};
+
+let PASSWORD = store.get("bbq_pw") || "";
+let DATA = null;
+
+/* ---------- Auth + fetch ---------- */
+
+async function load(password) {
+  const res = await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "read", password })
+  });
+  const out = await res.json();
+
+  // An older deployment has no "read" action, so it treats this as a
+  // submission and answers {ok:true,row:N} — having just written a blank
+  // row. Catch that shape rather than showing an empty dashboard.
+  if (out.ok && !Array.isArray(out.headers)) {
+    throw new Error(
+      "Apps Script 還是舊版（回應中沒有資料欄位）。請到 Apps Script 貼上新的 " +
+      "Code.gs，並用「部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本」重新部署。" +
+      (out.row ? `　注意：Sheet 第 ${out.row} 列被寫入了一筆空白資料，請刪除。` : ""));
+  }
+  return out;
+}
+
+$("gateForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const btn = $("go"), err = $("gateErr");
+  const pw = $("pw").value;
+  if (!pw) return;
+
+  btn.disabled = true; btn.textContent = "驗證中…"; err.hidden = true;
+  try {
+    const out = await load(pw);
+    if (!out.ok) throw new Error(out.error || "驗證失敗");
+    PASSWORD = pw;
+    store.set("bbq_pw", pw);
+    DATA = out;
+    showDash();
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+    $("pw").select();
+  } finally {
+    btn.disabled = false; btn.textContent = "進入";
+  }
+});
+
+/* Re-enter automatically within the same tab session. */
+(async () => {
+  if (!PASSWORD) return;
+  const out = await load(PASSWORD).catch(() => null);
+  if (out && out.ok) { DATA = out; showDash(); }
+  else store.del("bbq_pw");
+})();
+
+/* ---------- Dashboard ---------- */
+
+function col(headers, id) { return headers.indexOf(id); }
+
+function stats(headers, rows) {
+  const at = id => col(headers, id);
+  const iJoin = at("joining"), iPark = at("parking"), iDiet = at("dietary");
+
+  let signups = rows.length, plusOnes = 0, car = 0, scooter = 0;
+  for (const r of rows) {
+    if (iJoin > -1 && /\+1|攜伴/.test(r[iJoin] || "")) plusOnes++;
+    const p = iPark > -1 ? (r[iPark] || "") : "";
+    if (/Car|汽車/.test(p)) car++;
+    else if (/Scooter|機車/.test(p)) scooter++;
+  }
+  const heads = signups + plusOnes;
+  const diets = iDiet > -1
+    ? rows.map(r => [r[at("name")], r[iDiet]])
+          .filter(([, d]) => d && !/^(none|無|沒有)$/i.test(d.trim()))
+    : [];
+
+  return { signups, plusOnes, heads, car, scooter, diets,
+           money: heads * PRICE_PER_PERSON };
+}
+
+function showDash() {
+  const { headers, rows } = DATA;
+  const s = stats(headers, rows);
+  $("gate").hidden = true;
+  const dash = $("dash");
+  dash.hidden = false;
+
+  const shown = COLS.filter(([id]) => headers.includes(id));
+  const extra = headers.filter(h =>
+    !COLS.some(([id]) => id === h) && !["submitted_at","source_page"].includes(h));
+
+  dash.innerHTML = `
+    <div class="bar">
+      <div>
+        <h1>報名管理</h1>
+        <p class="sub" style="margin:0">中秋卡肉趴 · 9/26（六）· 報名截止 8/31</p>
+      </div>
+      <div class="tools">
+        <button class="ghost" id="csv">下載 CSV</button>
+        <button class="ghost" id="refresh">重新載入</button>
+        <button class="ghost" id="out">登出</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat"><div class="k">報名筆數</div>
+        <div class="v">${s.signups}</div></div>
+      <div class="card stat hot"><div class="k">總人數（含攜伴）</div>
+        <div class="v">${s.heads} <small>/ 約 50</small></div></div>
+      <div class="card stat"><div class="k">攜伴</div>
+        <div class="v">${s.plusOnes}</div></div>
+      <div class="card stat"><div class="k">汽車車位</div>
+        <div class="v">${s.car}</div></div>
+      <div class="card stat"><div class="k">機車車位</div>
+        <div class="v">${s.scooter}</div></div>
+      <div class="card stat"><div class="k">應收金額</div>
+        <div class="v mono">$${s.money.toLocaleString()}</div></div>
+    </div>
+
+    ${s.diets.length ? `
+      <h2>飲食需求與過敏 <span class="tag">${s.diets.length}</span></h2>
+      <div class="card"><ul class="list">
+        ${s.diets.map(([n, d]) =>
+          `<li><strong>${esc(n)}</strong>：${esc(d)}</li>`).join("")}
+      </ul></div>` : ""}
+
+    <h2>所有報名 <span class="tag">${rows.length}</span></h2>
+    ${rows.length ? `
+      <div class="scroll"><table>
+        <thead><tr>
+          <th>#</th>
+          ${shown.map(([, t]) => `<th>${esc(t)}</th>`).join("")}
+          ${extra.map(h => `<th>${esc(h)}</th>`).join("")}
+        </tr></thead>
+        <tbody>
+          ${rows.map((r, i) => `<tr>
+            <td class="mono">${i + 1}</td>
+            ${shown.map(([id]) => cell(id, r[col(headers, id)])).join("")}
+            ${extra.map(h => `<td>${esc(r[col(headers, h)])}</td>`).join("")}
+          </tr>`).join("")}
+        </tbody>
+      </table></div>` : `<div class="card empty">還沒有人報名。</div>`}
+
+    <p class="note">
+      這頁含報名者的電話與 Email，屬個人資料 —— 別在公用螢幕上開著，
+      也別把密碼貼在公開的群組裡。關閉分頁後需要重新輸入密碼。
+    </p>`;
+
+  $("refresh").onclick = async () => {
+    const out = await load(PASSWORD);
+    if (out.ok) { DATA = out; showDash(); }
+  };
+  $("out").onclick = () => {
+    store.del("bbq_pw");
+    location.reload();
+  };
+  $("csv").onclick = () => downloadCsv(headers, rows);
+}
+
+function cell(id, v) {
+  v = v ?? "";
+  if (id === "parking" && /Car|汽車|Scooter|機車/.test(v))
+    return `<td><span class="tag car">${esc(v.split("｜").pop())}</span></td>`;
+  if (id === "parking" && v)
+    return `<td><span class="tag">${esc(v.split("｜").pop())}</span></td>`;
+  if (id === "joining" && v)
+    return `<td>${esc(v.split("｜").pop())}</td>`;
+  if (id === "dietary")  return `<td class="wrap-cell">${esc(v)}</td>`;
+  if (id === "transfer_last5") return `<td class="mono">${esc(v)}</td>`;
+  return `<td>${esc(v)}</td>`;
+}
+
+function downloadCsv(headers, rows) {
+  const q = s => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  const csv = "﻿" +            // BOM so Excel opens UTF-8 correctly
+    [headers.map(q).join(","), ...rows.map(r => r.map(q).join(","))].join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "中秋卡肉趴報名.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

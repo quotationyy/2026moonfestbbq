@@ -128,6 +128,46 @@ New version ▸ Deploy**, or the live endpoint keeps running the old code. Editi
 
 ---
 
+## The admin page
+
+`admin.html` shows every response — headcount, parking counts, dietary notes, a
+full table, CSV export. It is served from the same public GitHub Pages site, so
+it is built on one rule: **the page holds no secret and no data.**
+
+A password typed into it is POSTed to Apps Script, which compares it against a
+Script Property and only then returns rows. Reading `admin.html`'s source, or
+skipping it and calling `/exec` directly, gets an attacker nothing without the
+password. Never move the password into this repo — the repo is public.
+
+### Setting the password
+
+In the Apps Script editor: **⚙️ Project Settings ▸ Script Properties ▸ Add
+script property**
+
+| Property | Value |
+|---|---|
+| `ADMIN_PASSWORD` | your password |
+
+Then **Deploy ▸ Manage deployments ▸ ✏️ ▸ Version: New version ▸ Deploy**.
+Changing a Script Property alone needs no redeploy; changing `Code.gs` does.
+
+### What protects it, and what does not
+
+| | |
+|---|---|
+| ✅ | Password never reaches the browser — it is only ever sent *to* the server |
+| ✅ | Wrong guesses cost 1.5s each; 8 failures lock reads for 15 minutes |
+| ✅ | Comparison is constant-time, so timing leaks nothing |
+| ✅ | HTTPS everywhere; `noindex` keeps the page out of search results |
+| ⚠️ | One shared password — it cannot be revoked for one person only |
+| ⚠️ | The lockout is global, so someone could deliberately lock admins out for 15 minutes |
+| ⚠️ | Anyone holding the password sees every response, including phone numbers |
+
+For per-person access that you can revoke individually, share the Google Sheet
+with each admin's Google account instead (**Share** in the spreadsheet). That
+uses real Google authentication and needs no password at all — the admin page is
+for a nicer read-only summary, not stronger security.
+
 ## Good to know
 
 - **Reordering or renaming a question `id`** starts a new column; old responses
