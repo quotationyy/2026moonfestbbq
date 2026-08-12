@@ -214,6 +214,28 @@ const store = {
 let PASSWORD = store.get("bbq_pw") || "";
 let DATA = null;
 
+/* Code.gs is deliberately pure ASCII — it has to travel through a clipboard
+   and a browser to reach Apps Script, and non-ASCII gets mangled on the way.
+   So the server sends a stable `code` and the Chinese lives here instead. */
+const REDEPLOY = "請重新部署：部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本。";
+const ERRORS = {
+  busy:            () => "伺服器忙碌中，請稍後重試。",
+  bad_request:     () => "請求內容為空。",
+  no_password_set: () => "尚未設定 ADMIN_PASSWORD。請到 Apps Script 的「專案設定 ▸ 指令碼屬性」新增。",
+  locked:        out => `密碼錯誤次數過多，請於 ${out.minutes} 分鐘後再試。`,
+  bad_password:    () => "密碼錯誤。",
+  row_missing:     () => "這一列已不存在，請重新載入後再試。",
+  stale_row:     out => `這一列的資料在頁面載入後已變動（該列目前是「${out.actualName}」）。` +
+                        "沒有刪除任何資料，請重新載入後再試。",
+  unknown_action: out => `這個部署版本不認得 action「${out.action}」，沒有寫入任何資料。${REDEPLOY}`
+};
+
+/** Turn a server refusal into Chinese, falling back to whatever it sent. */
+function errText(out) {
+  const f = ERRORS[out.code];
+  return f ? f(out) : (out.error || "發生未知錯誤");
+}
+
 /* ---------- Auth + fetch ---------- */
 
 async function load(password) {
@@ -245,7 +267,7 @@ $("gateForm").addEventListener("submit", async ev => {
   btn.disabled = true; btn.textContent = "驗證中…"; err.hidden = true;
   try {
     const out = await load(pw);
-    if (!out.ok) throw new Error(out.error || "驗證失敗");
+    if (!out.ok) throw new Error(errText(out));
     PASSWORD = pw;
     store.set("bbq_pw", pw);
     DATA = out;
@@ -403,7 +425,7 @@ async function remove(btn) {
       })
     });
     const out = await res.json();
-    if (!out.ok) throw new Error(out.error || "刪除失敗");
+    if (!out.ok) throw new Error(errText(out));
 
     // A deployment without the delete action treats this as a submission and
     // answers {ok:true,row:N}, having just appended a blank row. Never report

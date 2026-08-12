@@ -1,11 +1,11 @@
 /**
- * Survey backend — Google Apps Script Web App.
+ * Survey backend -- Google Apps Script Web App.
  *
  * Three actions, all over POST:
  *
- *   (no action) / "submit"  append one response row  — public
- *   "read"                  return every response    — password required
- *   "delete"                archive one response     — password required
+ *   (no action) / "submit"  append one response row  -- public
+ *   "read"                  return every response    -- password required
+ *   "delete"                archive one response     -- password required
  *
  * The admin password is NOT in this file. This file lives in a public
  * GitHub repository, so anything written here is world-readable. The
@@ -26,7 +26,7 @@ var FAIL_DELAY_MS   = 1500;
 var MAX_FAILS       = 8;
 var LOCKOUT_MINUTES = 15;
 
-/** Visiting the /exec URL in a browser hits this — a quick "is it live?" check. */
+/** Visiting the /exec URL in a browser hits this -- a quick "is it live?" check. */
 function doGet() {
   return json_({ ok: true, service: 'survey', sheet: SHEET_NAME });
 }
@@ -37,12 +37,12 @@ function doPost(e) {
     // Two people submitting at the same moment must not race on the header row.
     lock.waitLock(30000);
   } catch (err) {
-    return json_({ ok: false, error: '伺服器忙碌中，請稍後重試。' });
+    return json_({ ok: false, code: 'busy', error: 'Server busy, please retry.' });
   }
 
   try {
     if (!e || !e.postData || !e.postData.contents) {
-      return json_({ ok: false, error: 'Empty request body.' });
+      return json_({ ok: false, code: 'bad_request', error: 'Empty request body.' });
     }
     var payload = JSON.parse(e.postData.contents);
     var action = payload.action;
@@ -58,9 +58,8 @@ function doPost(e) {
     // handleSubmit_ would silently append a blank row on every attempt,
     // which is exactly what a delete against an older deployment did.
     if (action) {
-      return json_({ ok: false, staleServer: true, error:
-        '這個部署版本不認得 action「' + action + '」，沒有寫入任何資料。' +
-        '請重新部署 Apps Script：部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本。' });
+      return json_({ ok: false, code: 'unknown_action', staleServer: true,
+        action: String(action), error: 'This deployment does not know that action. Nothing was written.' });
     }
 
     return handleSubmit_(payload);
@@ -129,16 +128,16 @@ function authorize_(payload) {
   var expected = props.getProperty(PW_PROPERTY);
 
   if (!expected) {
-    return json_({ ok: false, error:
-      '尚未設定 ADMIN_PASSWORD。請到「專案設定 ▸ 指令碼屬性」新增。' });
+    return json_({ ok: false, code: 'no_password_set', error:
+      'ADMIN_PASSWORD is not set. Add it under Project Settings > Script Properties.' });
   }
 
   // Refuse outright while locked out, without even looking at the password.
   var until = Number(props.getProperty('lockout_until') || 0);
   if (until && Date.now() < until) {
-    return json_({ ok: false, locked: true, error:
-      '密碼錯誤次數過多，請於 ' +
-      Math.ceil((until - Date.now()) / 60000) + ' 分鐘後再試。' });
+    return json_({ ok: false, code: 'locked', locked: true,
+      minutes: Math.ceil((until - Date.now()) / 60000),
+      error: 'Too many wrong attempts.' });
   }
 
   if (!constantTimeEquals_(String(payload.password || ''), expected)) {
@@ -151,7 +150,7 @@ function authorize_(payload) {
     }
     // Slow every guess down; a scripted attack cannot go faster than this.
     Utilities.sleep(FAIL_DELAY_MS);
-    return json_({ ok: false, error: '密碼錯誤。' });
+    return json_({ ok: false, code: 'bad_password', error: 'Wrong password.' });
   }
 
   props.deleteProperty('fail_count');
@@ -180,7 +179,7 @@ function handleRead_() {
  * delete is refused and the client is told to reload.
  *
  * The row is copied to the Deleted sheet before removal, so a mistake is
- * recoverable — nothing is permanently destroyed here.
+ * recoverable -- nothing is permanently destroyed here.
  */
 function handleDelete_(payload) {
   var rowNum = Number(payload.row);
@@ -189,8 +188,8 @@ function handleDelete_(payload) {
   var width  = Math.max(sheet.getLastColumn(), 1);
 
   if (!rowNum || rowNum < 2 || rowNum > last) {
-    return json_({ ok: false, stale: true,
-      error: '這一列已不存在，請重新載入後再試。' });
+    return json_({ ok: false, code: 'row_missing', stale: true,
+      error: 'That row no longer exists.' });
   }
 
   var headers = getHeaders_(sheet);
@@ -203,9 +202,8 @@ function handleDelete_(payload) {
   };
   if (String(verify.timestamp || '') !== actual.timestamp ||
       String(verify.name || '')      !== actual.name) {
-    return json_({ ok: false, stale: true, error:
-      '這一列的資料在頁面載入後已變動（該列目前是「' + actual.name +
-      '」）。沒有刪除任何資料，請重新載入後再試。' });
+    return json_({ ok: false, code: 'stale_row', stale: true,
+      actualName: actual.name, error: 'Row changed since the page loaded.' });
   }
 
   // Copy to the archive sheet first, so a failure here aborts before removal.
