@@ -148,6 +148,14 @@ td.act { text-align: right; }
 ul.list { margin: 0; padding-left: 1.125rem; font-size: 0.875rem; }
 ul.list li { margin-bottom: 0.375rem; }
 .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.stale { color: hsl(var(--primary)); font-weight: 600; }
+.stale::after {
+  content: ""; display: inline-block; vertical-align: -1px;
+  width: 0.55em; height: 0.55em; margin-left: 0.4em;
+  border: 2px solid currentColor; border-right-color: transparent;
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 [hidden] { display: none !important; }
 </style>
 </head>
@@ -213,6 +221,29 @@ const store = {
 
 let PASSWORD = store.get("bbq_pw") || "";
 let DATA = null;
+let REVALIDATING = false;   // showing cached rows while a fresh read is in flight
+
+/* Reading costs 3-5s of Apps Script overhead, so a reload sat on a blank
+   screen every time. The last response is cached and painted immediately,
+   then replaced when the real one lands. Cached in sessionStorage, not
+   localStorage: these rows hold phone numbers and emails, and sessionStorage
+   is discarded when the tab closes -- matching where the password is kept. */
+const CACHE_KEY = "bbq_cache";
+
+function saveCache(d) {
+  store.set(CACHE_KEY, JSON.stringify({ headers: d.headers, rows: d.rows }));
+}
+function readCache() {
+  try {
+    const c = JSON.parse(store.get(CACHE_KEY) || "null");
+    return c && Array.isArray(c.rows) && Array.isArray(c.headers) ? c : null;
+  } catch { return null; }
+}
+function setData(d, render = true) {
+  DATA = { headers: d.headers, rows: d.rows };
+  saveCache(DATA);
+  if (render) showDash();
+}
 
 /* Code.gs is deliberately pure ASCII — it has to travel through a clipboard
    and a browser to reach Apps Script, and non-ASCII gets mangled on the way.
@@ -274,8 +305,7 @@ $("gateForm").addEventListener("submit", async ev => {
     if (!out.ok) throw new Error(errText(out));
     PASSWORD = pw;
     store.set("bbq_pw", pw);
-    DATA = out;
-    showDash();
+    setData(out);
   } catch (e) {
     err.textContent = e.message;
     err.hidden = false;
@@ -285,12 +315,18 @@ $("gateForm").addEventListener("submit", async ev => {
   }
 });
 
-/* Re-enter automatically within the same tab session. */
+/* Re-enter automatically within the same tab session: paint whatever was
+   cached at once, then reconcile with the server. */
 (async () => {
   if (!PASSWORD) return;
+  const cached = readCache();
+  if (cached) { DATA = cached; REVALIDATING = true; showDash(); }
+
   const out = await load(PASSWORD).catch(() => null);
-  if (out && out.ok) { DATA = out; showDash(); }
-  else store.del("bbq_pw");
+  REVALIDATING = false;
+  if (out && out.ok) setData(out);
+  else if (cached) { showDash(); toast("無法連線，畫面顯示的是快取資料", true); }
+  else { store.del("bbq_pw"); store.del(CACHE_KEY); }
 })();
 
 /* ---------- Dashboard ---------- */
@@ -333,7 +369,8 @@ function showDash() {
     <div class="bar">
       <div>
         <h1>報名管理</h1>
-        <p class="sub" style="margin:0">中秋卡肉趴 · 9/26（六）· 報名截止 8/31</p>
+        <p class="sub" style="margin:0">中秋卡肉趴 · 9/26（六）· 報名截止 8/31${
+          REVALIDATING ? ' · <span class="stale">快取資料，更新中…</span>' : ""}</p>
       </div>
       <div class="tools">
         <button class="ghost" id="csv">下載 CSV</button>
@@ -394,10 +431,11 @@ function showDash() {
 
   $("refresh").onclick = async () => {
     const out = await load(PASSWORD);
-    if (out.ok) { DATA = out; showDash(); }
+    if (out.ok) setData(out);
   };
   $("out").onclick = () => {
     store.del("bbq_pw");
+    store.del(CACHE_KEY);
     location.reload();
   };
   $("csv").onclick = () => downloadCsv(headers, rows);
@@ -425,9 +463,8 @@ async function remove(btn) {
 
   const iName = col(DATA.headers, "name");
   const iTs   = col(DATA.headers, "timestamp");
-  DATA = { ...DATA,
-    rows: DATA.rows.filter(r => !((r[iName] ?? "") === name && (r[iTs] ?? "") === ts)) };
-  showDash();
+  setData({ headers: DATA.headers,
+    rows: DATA.rows.filter(r => !((r[iName] ?? "") === name && (r[iTs] ?? "") === ts)) });
 
   pending++;
   toast(pending > 1 ? `刪除中… (${pending})` : `刪除「${who}」…`);
@@ -441,8 +478,7 @@ async function remove(btn) {
     if (!out.ok) throw new Error(errText(out));
 
     if (Array.isArray(out.rows)) {
-      DATA = { headers: out.headers, rows: out.rows };   // authoritative
-      showDash();
+      setData(out);                                      // authoritative
     } else if (typeof out.remaining !== "number") {
       // A deployment predating the delete action treated this as a submission.
       throw new Error(
@@ -450,7 +486,7 @@ async function remove(btn) {
         (out.row ? `請到 Sheet 刪掉第 ${out.row} 列。` : "") + REDEPLOY);
     } else {
       const fresh = await load(PASSWORD);      // old server: no rows attached
-      if (fresh.ok) { DATA = fresh; showDash(); }
+      if (fresh.ok) setData(fresh);
     }
     if (--pending === 0) {
       toast(out.alreadyGone
@@ -461,7 +497,7 @@ async function remove(btn) {
     pending--;
     toast(e.message, true);
     const fresh = await load(PASSWORD).catch(() => null);   // put the row back
-    if (fresh && fresh.ok) { DATA = fresh; showDash(); }
+    if (fresh && fresh.ok) setData(fresh);
   }
 }
 
