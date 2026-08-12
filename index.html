@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Survey</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1a1d21;
+    --muted: #6b7280;
+    --border: #d8dce2;
+    --accent: #2563eb;
+    --accent-text: #ffffff;
+    --error: #c02626;
+    --ok: #15803d;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c;
+      --card: #1e2126;
+      --text: #e8eaed;
+      --muted: #9aa1ab;
+      --border: #343841;
+      --accent: #4b82f6;
+      --error: #f87171;
+      --ok: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 16px 80px;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 26px; line-height: 1.25; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 0; }
+  .q {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .q.invalid { border-color: var(--error); }
+  .q-label { font-weight: 600; display: block; margin-bottom: 2px; }
+  .req { color: var(--error); margin-left: 3px; }
+  .q-help { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .q-help:last-of-type { margin-bottom: 0; }
+  input[type=text], input[type=email], input[type=number], textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, textarea:focus, select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+  }
+  .opts { margin-top: 12px; display: grid; gap: 2px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 8px; margin: 0 -8px;
+    border-radius: 7px; cursor: pointer;
+  }
+  .opt:hover { background: var(--bg); }
+  .opt input { margin: 4px 0 0; flex: none; accent-color: var(--accent); }
+  .scale { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .scale label {
+    flex: 1 1 48px; min-width: 48px;
+    text-align: center; padding: 10px 4px;
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; font-variant-numeric: tabular-nums;
+  }
+  .scale label:hover { border-color: var(--accent); }
+  .scale input { position: absolute; opacity: 0; pointer-events: none; }
+  .scale input:checked + span { font-weight: 700; }
+  .scale label:has(input:checked) {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+  }
+  .scale-ends {
+    display: flex; justify-content: space-between;
+    color: var(--muted); font-size: 13px; margin-top: 6px;
+  }
+  .err { color: var(--error); font-size: 14px; margin-top: 8px; display: none; }
+  .q.invalid .err { display: block; }
+  button {
+    font: inherit; font-weight: 600;
+    padding: 13px 26px;
+    background: var(--accent); color: var(--accent-text);
+    border: 0; border-radius: 8px; cursor: pointer;
+    margin-top: 10px;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.08); }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .hp { position: absolute; left: -9999px; }
+  .status { margin-top: 14px; font-size: 14px; color: var(--muted); }
+  .status.bad { color: var(--error); }
+  .done {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 40px 24px; text-align: center;
+  }
+  .done h2 { margin: 0 0 8px; font-size: 21px; color: var(--ok); }
+  .done p { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="app"></div>
+</div>
+
+<script>
+/* ============================================================
+   1. PASTE YOUR APPS SCRIPT WEB APP URL HERE  (see README.md)
+   ============================================================ */
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+/* ============================================================
+   2. EDIT YOUR SURVEY BELOW — this is the only part you change.
+
+   Each question needs a unique `id` (becomes the Sheet column
+   header) and a `type`:
+
+     text      one-line answer
+     textarea  long answer
+     email     one line, validated as an email
+     number     numeric  (opts: min, max)
+     radio     pick one            -> options: [...]
+     checkbox  pick any number     -> options: [...]
+     select    dropdown            -> options: [...]
+     scale     1-N rating          -> max: 5, minLabel:, maxLabel:
+
+   Optional on any question: required: true, help: "hint text"
+   ============================================================ */
+const SURVEY = {
+  title: "Customer Quotation Survey",
+  intro: "Takes about 2 minutes. Your answers help us quote more accurately.",
+  thanks: "Thanks! Your response has been recorded.",
+  questions: [
+    {
+      id: "name",
+      type: "text",
+      label: "Your name",
+      required: true
+    },
+    {
+      id: "email",
+      type: "email",
+      label: "Email",
+      help: "So we can follow up with the quotation.",
+      required: true
+    },
+    {
+      id: "company_size",
+      type: "radio",
+      label: "How many people are in your company?",
+      options: ["1–10", "11–50", "51–200", "201–1000", "1000+"],
+      required: true
+    },
+    {
+      id: "interests",
+      type: "checkbox",
+      label: "Which of these are you interested in?",
+      help: "Select all that apply.",
+      options: ["Licensing", "Support contract", "Custom development",
+                "Training", "Consulting"]
+    },
+    {
+      id: "budget",
+      type: "select",
+      label: "Rough budget range",
+      options: ["Not decided yet", "Under $5,000", "$5,000 – $20,000",
+                "$20,000 – $100,000", "Over $100,000"]
+    },
+    {
+      id: "urgency",
+      type: "scale",
+      label: "How urgent is this project?",
+      max: 5,
+      minLabel: "No rush",
+      maxLabel: "Very urgent",
+      required: true
+    },
+    {
+      id: "comments",
+      type: "textarea",
+      label: "Anything else we should know?"
+    }
+  ]
+};
+
+/* ============================================================
+   No need to edit below this line.
+   ============================================================ */
+
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function render() {
+  const qs = SURVEY.questions.map(renderQuestion).join("");
+  app.innerHTML = `
+    <header>
+      <h1>${esc(SURVEY.title)}</h1>
+      ${SURVEY.intro ? `<p class="lede">${esc(SURVEY.intro)}</p>` : ""}
+    </header>
+    <form id="form" novalidate>
+      ${qs}
+      <input class="hp" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="submit" id="submit">Submit</button>
+      <div class="status" id="status" role="status"></div>
+    </form>`;
+  const form = document.getElementById("form");
+  form.addEventListener("submit", onSubmit);
+
+  // Drop a question's error as soon as the visitor touches it again,
+  // rather than making them submit to find out it's fixed.
+  form.addEventListener("input", ev => {
+    const q = ev.target.closest(".q");
+    if (q && q.classList.contains("invalid")) {
+      q.classList.remove("invalid");
+      q.querySelector(".err").textContent = "";
+    }
+  });
+}
+
+function renderQuestion(q) {
+  const req = q.required ? '<span class="req" aria-hidden="true">*</span>' : "";
+  const help = q.help ? `<p class="q-help">${esc(q.help)}</p>` : "";
+  let body = "";
+
+  if (q.type === "text" || q.type === "email" || q.type === "number") {
+    const t = q.type === "number" ? "number" : (q.type === "email" ? "email" : "text");
+    const min = q.min != null ? ` min="${esc(q.min)}"` : "";
+    const max = q.max != null ? ` max="${esc(q.max)}"` : "";
+    body = `<input type="${t}" name="${esc(q.id)}"${min}${max}>`;
+
+  } else if (q.type === "textarea") {
+    body = `<textarea name="${esc(q.id)}"></textarea>`;
+
+  } else if (q.type === "select") {
+    body = `<select name="${esc(q.id)}">
+      <option value="">— choose —</option>
+      ${q.options.map(o => `<option>${esc(o)}</option>`).join("")}
+    </select>`;
+
+  } else if (q.type === "radio" || q.type === "checkbox") {
+    body = `<div class="opts">${q.options.map((o, i) => `
+      <label class="opt">
+        <input type="${q.type}" name="${esc(q.id)}" value="${esc(o)}">
+        <span>${esc(o)}</span>
+      </label>`).join("")}</div>`;
+
+  } else if (q.type === "scale") {
+    const n = q.max || 5;
+    const boxes = Array.from({ length: n }, (_, i) => `
+      <label><input type="radio" name="${esc(q.id)}" value="${i + 1}"><span>${i + 1}</span></label>`
+    ).join("");
+    body = `<div class="scale">${boxes}</div>
+      <div class="scale-ends">
+        <span>${esc(q.minLabel || "")}</span><span>${esc(q.maxLabel || "")}</span>
+      </div>`;
+  }
+
+  return `<div class="q" data-id="${esc(q.id)}">
+    <span class="q-label">${esc(q.label)}${req}</span>
+    ${help}${body}
+    <div class="err"></div>
+  </div>`;
+}
+
+function collect() {
+  const form = document.getElementById("form");
+  const answers = {};
+  const errors = [];
+
+  for (const q of SURVEY.questions) {
+    const nodes = form.querySelectorAll(`[name="${CSS.escape(q.id)}"]`);
+    let value;
+
+    if (q.type === "checkbox") {
+      value = [...nodes].filter(n => n.checked).map(n => n.value).join(", ");
+    } else if (q.type === "radio" || q.type === "scale") {
+      const hit = [...nodes].find(n => n.checked);
+      value = hit ? hit.value : "";
+    } else {
+      value = nodes[0].value.trim();
+    }
+
+    if (q.required && !value) {
+      errors.push([q.id, "This question is required."]);
+    } else if (q.type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+      errors.push([q.id, "That doesn't look like a valid email address."]);
+    }
+    answers[q.id] = value;
+  }
+
+  return { answers, errors, hp: form.elements._hp.value };
+}
+
+function showErrors(errors) {
+  document.querySelectorAll(".q").forEach(el => {
+    el.classList.remove("invalid");
+    el.querySelector(".err").textContent = "";
+  });
+  for (const [id, msg] of errors) {
+    const el = document.querySelector(`.q[data-id="${CSS.escape(id)}"]`);
+    if (el) {
+      el.classList.add("invalid");
+      el.querySelector(".err").textContent = msg;
+    }
+  }
+  if (errors.length) {
+    document.querySelector(".q.invalid")
+      .scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+async function onSubmit(ev) {
+  ev.preventDefault();
+  const btn = document.getElementById("submit");
+  const status = document.getElementById("status");
+  const { answers, errors, hp } = collect();
+
+  showErrors(errors);
+  if (errors.length) {
+    status.className = "status bad";
+    status.textContent = `Please fix ${errors.length} ${errors.length === 1 ? "field" : "fields"} above.`;
+    return;
+  }
+
+  if (SCRIPT_URL.startsWith("PASTE_")) {
+    status.className = "status bad";
+    status.textContent = "Not configured yet: set SCRIPT_URL in index.html (see README.md).";
+    return;
+  }
+
+  btn.disabled = true;
+  status.className = "status";
+  status.textContent = "Sending…";
+
+  try {
+    // text/plain keeps this a "simple" CORS request, so the browser
+    // skips the preflight that Apps Script cannot answer.
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        answers,
+        _hp: hp,
+        meta: { submittedAt: new Date().toISOString(), page: location.href }
+      })
+    });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error || "The server rejected the response.");
+
+    app.innerHTML = `<div class="done">
+      <h2>Submitted</h2>
+      <p>${esc(SURVEY.thanks)}</p>
+    </div>`;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+  } catch (err) {
+    btn.disabled = false;
+    status.className = "status bad";
+    status.textContent = "Couldn't send: " + err.message + " Please try again.";
+  }
+}
+
+render();
+</script>
+</body>
+</html>
