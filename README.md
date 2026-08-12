@@ -104,6 +104,12 @@ needs touching, and the Sheet picks up new columns by itself.
 
 Labels, options and answers are all UTF-8, so Chinese text works as-is.
 
+Option lists longer than 6 items automatically flow into responsive columns
+rather than one tall stack, so a 19-item question stays scrollable on a phone.
+
+All interface text (button label, error messages, "please choose") lives in the
+`MSG` object just below `SURVEY` — change the language there in one place.
+
 **After editing `Code.gs`** you must **Deploy ▸ Manage deployments ▸ ✏️ ▸ Version:
 New version ▸ Deploy**, or the live endpoint keeps running the old code. Editing
 `index.html` just needs a `git push`.

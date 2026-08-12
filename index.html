@@ -258,6 +258,22 @@ const SURVEY = {
   ]
 };
 
+/* 介面文字。要改成英文或其他語言只要改這裡。 */
+const MSG = {
+  submit:    "送出報名",
+  sending:   "送出中…",
+  choose:    "— 請選擇 —",
+  doneTitle: "報名成功",
+  required:  "這題要填喔。",
+  email:     "這個 email 格式看起來不對。",
+  notNumber: "請填數字。",
+  min:       n => `不能小於 ${n}。`,
+  max:       n => `不能大於 ${n}。`,
+  fixCount:  n => `上面有 ${n} 題要修正。`,
+  failed:    e => `送不出去：${e} 請再試一次。`,
+  unset:     "還沒設定：請先把 Apps Script 的網址填進 index.html 的 SCRIPT_URL（見 README.md）。"
+};
+
 /* ============================================================
    No need to edit below this line.
    ============================================================ */
@@ -276,7 +292,7 @@ function render() {
     <form id="form" novalidate>
       ${qs}
       <input class="hp" type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <button type="submit" id="submit">Submit</button>
+      <button type="submit" id="submit">${esc(MSG.submit)}</button>
       <div class="status" id="status" role="status"></div>
     </form>`;
   const form = document.getElementById("form");
@@ -309,7 +325,7 @@ function renderQuestion(q) {
 
   } else if (q.type === "select") {
     body = `<select name="${esc(q.id)}">
-      <option value="">— choose —</option>
+      <option value="">${esc(MSG.choose)}</option>
       ${q.options.map(o => `<option>${esc(o)}</option>`).join("")}
     </select>`;
 
@@ -358,9 +374,15 @@ function collect() {
     }
 
     if (q.required && !value) {
-      errors.push([q.id, "This question is required."]);
+      errors.push([q.id, MSG.required]);
     } else if (q.type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
-      errors.push([q.id, "That doesn't look like a valid email address."]);
+      errors.push([q.id, MSG.email]);
+    } else if (q.type === "number" && value) {
+      // The form is novalidate, so min/max have to be checked here.
+      const n = Number(value);
+      if (!Number.isFinite(n)) errors.push([q.id, MSG.notNumber]);
+      else if (q.min != null && n < q.min) errors.push([q.id, MSG.min(q.min)]);
+      else if (q.max != null && n > q.max) errors.push([q.id, MSG.max(q.max)]);
     }
     answers[q.id] = value;
   }
@@ -395,19 +417,19 @@ async function onSubmit(ev) {
   showErrors(errors);
   if (errors.length) {
     status.className = "status bad";
-    status.textContent = `Please fix ${errors.length} ${errors.length === 1 ? "field" : "fields"} above.`;
+    status.textContent = MSG.fixCount(errors.length);
     return;
   }
 
   if (SCRIPT_URL.startsWith("PASTE_")) {
     status.className = "status bad";
-    status.textContent = "Not configured yet: set SCRIPT_URL in index.html (see README.md).";
+    status.textContent = MSG.unset;
     return;
   }
 
   btn.disabled = true;
   status.className = "status";
-  status.textContent = "Sending…";
+  status.textContent = MSG.sending;
 
   try {
     // text/plain keeps this a "simple" CORS request, so the browser
@@ -422,10 +444,10 @@ async function onSubmit(ev) {
       })
     });
     const out = await res.json();
-    if (!out.ok) throw new Error(out.error || "The server rejected the response.");
+    if (!out.ok) throw new Error(out.error || "server rejected the response");
 
     app.innerHTML = `<div class="done">
-      <h2>Submitted</h2>
+      <h2>${esc(MSG.doneTitle)}</h2>
       <p>${esc(SURVEY.thanks)}</p>
     </div>`;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -433,7 +455,7 @@ async function onSubmit(ev) {
   } catch (err) {
     btn.disabled = false;
     status.className = "status bad";
-    status.textContent = "Couldn't send: " + err.message + " Please try again.";
+    status.textContent = MSG.failed(err.message);
   }
 }
 
