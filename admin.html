@@ -405,6 +405,16 @@ async function remove(btn) {
     const out = await res.json();
     if (!out.ok) throw new Error(out.error || "刪除失敗");
 
+    // A deployment without the delete action treats this as a submission and
+    // answers {ok:true,row:N}, having just appended a blank row. Never report
+    // that as a successful delete — say what happened and how to undo it.
+    if (typeof out.remaining !== "number") {
+      throw new Error(
+        "Apps Script 是舊版、不支援刪除 —— 這次請求被當成一筆新報名寫進去了。" +
+        (out.row ? `請到 Sheet 刪掉第 ${out.row} 列。` : "") +
+        "然後重新部署：部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本。");
+    }
+
     toast(`已刪除「${out.deleted || who}」，剩 ${out.remaining} 筆`);
     const fresh = await load(PASSWORD);
     if (fresh.ok) { DATA = fresh; showDash(); }

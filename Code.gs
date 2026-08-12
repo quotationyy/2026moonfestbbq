@@ -52,6 +52,17 @@ function doPost(e) {
       if (refusal) return refusal;
       return action === 'read' ? handleRead_() : handleDelete_(payload);
     }
+
+    // A named action this deployment does not recognise means the page is
+    // newer than the deployed code. Refuse it. Falling through to
+    // handleSubmit_ would silently append a blank row on every attempt,
+    // which is exactly what a delete against an older deployment did.
+    if (action) {
+      return json_({ ok: false, staleServer: true, error:
+        '這個部署版本不認得 action「' + action + '」，沒有寫入任何資料。' +
+        '請重新部署 Apps Script：部署 ▸ 管理部署作業 ▸ ✏️ ▸ 版本：新版本。' });
+    }
+
     return handleSubmit_(payload);
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
