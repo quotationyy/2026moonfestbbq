@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Survey</title>
+<title>2026 中秋烤肉揪團報名</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -72,6 +72,9 @@
     border-color: var(--accent);
   }
   .opts { margin-top: 12px; display: grid; gap: 2px; }
+  /* Long lists (food, what to bring) flow into columns instead of one
+     tall stack — keeps them thumb-reachable on a phone. */
+  .opts.cols { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 2px 12px; }
   .opt {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 7px 8px; margin: 0 -8px;
@@ -147,58 +150,110 @@ const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
    Optional on any question: required: true, help: "hint text"
    ============================================================ */
 const SURVEY = {
-  title: "Customer Quotation Survey",
-  intro: "Takes about 2 minutes. Your answers help us quote more accurately.",
-  thanks: "Thanks! Your response has been recorded.",
+  title: "2026 中秋烤肉揪團 🌕🔥",
+  intro: "填一下讓我好估食材和裝備，大概 1 分鐘。有問題直接 LINE 我。",
+  thanks: "收到啦！有變動隨時跟我說，到時候群組裡公布細節。",
   questions: [
     {
       id: "name",
       type: "text",
-      label: "Your name",
+      label: "你的名字",
       required: true
     },
     {
-      id: "email",
-      type: "email",
-      label: "Email",
-      help: "So we can follow up with the quotation.",
+      id: "contact",
+      type: "text",
+      label: "聯絡方式",
+      help: "LINE ID 或手機，方便臨時有變動時通知你。",
       required: true
     },
     {
-      id: "company_size",
+      id: "attending",
       type: "radio",
-      label: "How many people are in your company?",
-      options: ["1–10", "11–50", "51–200", "201–1000", "1000+"],
+      label: "你會來嗎？",
+      options: ["一定到", "應該可以，還要確認", "不能來，下次揪我"],
       required: true
     },
     {
-      id: "interests",
+      id: "headcount",
+      type: "number",
+      label: "總共幾位？（含你自己）",
+      help: "有帶家人朋友或小孩的話請算進去。不能來就填 0。",
+      min: 0,
+      max: 30,
+      required: true
+    },
+    {
+      id: "kids",
+      type: "number",
+      label: "其中有幾位小孩？",
+      help: "沒有就填 0。我會多準備一些不辣的和飲料。",
+      min: 0,
+      max: 20
+    },
+    {
+      id: "food",
       type: "checkbox",
-      label: "Which of these are you interested in?",
-      help: "Select all that apply.",
-      options: ["Licensing", "Support contract", "Custom development",
-                "Training", "Consulting"]
+      label: "想吃什麼？",
+      help: "可以多選，我照票數抓比例去買。",
+      options: ["牛肉", "豬五花", "松阪豬", "雞翅／雞腿", "香腸", "培根",
+                "蝦子", "蛤蜊", "魚（秋刀魚等）", "花枝／透抽",
+                "玉米", "香菇", "杏鮑菇", "青椒／洋蔥", "四季豆",
+                "吐司／麵包", "米血／甜不辣", "月餅", "柚子"]
     },
     {
-      id: "budget",
-      type: "select",
-      label: "Rough budget range",
-      options: ["Not decided yet", "Under $5,000", "$5,000 – $20,000",
-                "$20,000 – $100,000", "Over $100,000"]
+      id: "restrictions",
+      type: "text",
+      label: "飲食禁忌或過敏？",
+      help: "例如：素食、不吃牛、海鮮過敏、不吃辣。沒有就留空。"
     },
     {
-      id: "urgency",
+      id: "bring",
+      type: "checkbox",
+      label: "你可以幫忙帶什麼？",
+      help: "有重複沒關係，我會在群組裡協調。",
+      options: ["烤肉架", "木炭＋火種", "夾子／刷子等烤具",
+                "冰桶＋冰塊", "飲料", "酒", "折疊桌椅",
+                "紙盤／餐具／濕紙巾", "垃圾袋", "藍芽音響",
+                "帳篷／野餐墊", "捕蚊燈或防蚊液", "我人到就好 🙏"]
+    },
+    {
+      id: "grill_skill",
       type: "scale",
-      label: "How urgent is this project?",
+      label: "你的烤肉功力？",
+      help: "我想知道有幾個人可以顧火，不然又是我一個人烤到最後。",
       max: 5,
-      minLabel: "No rush",
-      maxLabel: "Very urgent",
+      minLabel: "完全不會",
+      maxLabel: "交給我就對了",
       required: true
+    },
+    {
+      id: "start_time",
+      type: "radio",
+      label: "希望幾點開始？",
+      options: ["下午 4 點", "下午 5 點", "下午 6 點", "都可以，配合大家"],
+      required: true
+    },
+    {
+      id: "transport",
+      type: "select",
+      label: "交通方式",
+      options: ["自己開車（可以載人）", "自己開車（沒位子）",
+                "騎車", "搭捷運／公車，需要接駁", "搭別人的車"]
+    },
+    {
+      id: "share_cost",
+      type: "radio",
+      label: "費用分攤",
+      help: "食材＋木炭平均分，大概每人 300–500 元。",
+      options: ["OK，照人數平分", "OK，但我想自己帶食材抵",
+                "想先知道確切金額再說"]
     },
     {
       id: "comments",
       type: "textarea",
-      label: "Anything else we should know?"
+      label: "其他想說的？",
+      help: "想吃的東西沒列到、想推薦地點、或哪天不行都可以寫這裡。"
     }
   ]
 };
@@ -259,7 +314,8 @@ function renderQuestion(q) {
     </select>`;
 
   } else if (q.type === "radio" || q.type === "checkbox") {
-    body = `<div class="opts">${q.options.map((o, i) => `
+    const cols = q.options.length > 6 ? " cols" : "";
+    body = `<div class="opts${cols}">${q.options.map((o, i) => `
       <label class="opt">
         <input type="${q.type}" name="${esc(q.id)}" value="${esc(o)}">
         <span>${esc(o)}</span>
