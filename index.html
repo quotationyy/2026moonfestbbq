@@ -353,6 +353,13 @@ button:disabled { opacity: 0.5; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; }
 }
+
+/* ============================================================
+   暫時：只顯示海報，隱藏下方報名表單。
+   要把表單放回來，刪掉下面這一條規則就好（表單本身完全沒動，
+   只是不顯示）。
+   ============================================================ */
+main { display: none; }
 </style>
 </head>
 <body>
