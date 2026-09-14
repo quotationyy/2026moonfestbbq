@@ -102,9 +102,9 @@ body {
    written in those tokens and everything inside inherits them. */
 .poster-band {
   --bg1:#090A0F; --bg2:#0D0D11; --bg3:#151310; --bg4:#201913;
-  --glow-lo:rgba(205,145,70,.11); --glow-moon:rgba(240,232,210,.06);
+  --glow-lo:rgba(205,145,70,.11);
   --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
-  --moon-glow1:rgba(244,234,206,.18); --moon-glow2:rgba(210,195,155,.08);
+  --moon-glow1:rgba(244,234,206,.24); --moon-glow2:rgba(210,195,155,.12);
   --accent:#C9924A;
   --eyebrow:#C6AE85;
   --title-hi:#F6E3BE; --title-lo:#C6823B;
@@ -133,11 +133,9 @@ body {
      overflow:hidden silently eats it. */
   line-height:normal;
   font-family:var(--latin),"GSK","GenSekiGothic2 TW","Noto Sans TC",sans-serif;
-  /* Only the moon's halo. It is tied to where the moon is drawn, so it
-     scales with the artwork; the ambient wash and the night sky belong
-     to the band, which is full width. */
-  background:
-    radial-gradient(760px 460px at 86% 12%, var(--glow-moon), transparent 62%);
+  /* No background: the band paints the sky, edge to edge. Anything
+     drawn on this box shows its rectangle the moment the window is
+     wider than the column. */
   display:flex;flex-direction:column;padding:84px 78px 53px;
 }
 /* The poster was authored against a global `* { margin:0; padding:0 }`
@@ -147,7 +145,7 @@ body {
 .poster .star{position:absolute;display:block;background:var(--star);border-radius:50%;z-index:0}
 .poster .moon{position:absolute;top:96px;right:100px;width:220px;height:220px;border-radius:50%;z-index:0;
   background:radial-gradient(circle at 36% 30%,var(--moon1) 0%,var(--moon2) 58%,var(--moon3) 100%);
-  box-shadow:0 0 40px 10px var(--moon-glow1),0 0 110px 50px var(--moon-glow2)}
+  box-shadow:0 0 36px 8px var(--moon-glow1),0 0 66px 24px var(--moon-glow2)}
 .poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.16)}
 .poster .c1{width:51px;height:51px;left:56%;top:44%}
 .poster .c2{width:26px;height:26px;left:24%;top:22%}
@@ -194,6 +192,15 @@ body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
    once it caps (7.22% of 46rem is 3.32rem). Below 40rem the same gutter
    would squeeze the two facts columns until the longer date wraps, so
    the flat 1rem stands there. */
+/* On a large display the design steps up instead of sitting as a small
+   column in a big empty field. Everything here is sized in rem or
+   derived from --col and --disc, so one step on the root carries the
+   column, the type, the discs and the clearance under them together.
+   rem inside a media query is always the initial 16px, so these
+   breakpoints do not move when the root does. */
+@media (min-width: 100rem) { :root { font-size: 18px; } }
+@media (min-width: 120rem) { :root { font-size: 20px; } }
+
 @media (min-width: 40rem) {
   .wrap { padding-inline: min(7.22vw, 3.32rem); }
 
