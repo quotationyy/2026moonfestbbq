@@ -21,39 +21,57 @@
 :root {
   color-scheme: dark;
 
-  --background:          228 24% 4%;    /* #08090d — the poster's bed   */
-  --foreground:          41 29% 93%;    /* #F3F0E9 — the poster's ink  */
-  --card:                24 8% 11%;
-  --card-foreground:     41 29% 93%;
-  --muted:               26 8% 15%;
-  --muted-foreground:    37 9% 61%;     /* #A49D92 — poster --text3     */
-  --border:              30 9% 19%;
-  --input:               32 11% 27%;
-  --primary:             34 54% 54%;    /* #C9924A — poster --accent    */
-  --primary-foreground:  38 55% 8%;     /* #1B1409 — ink on the amber  */
-  --ring:                34 54% 54%;
-  --destructive:         6 72% 62%;
-  --success:             142 55% 50%;
-  --radius:              0.85rem;
+  /* Slate and chalk. --primary is the chalk the discs are cut from,
+     not an accent -- the only accent here is --red, and it is spent
+     entirely on one numeral. */
+  --background:          220 7% 7%;
+  --foreground:          40 12% 94%;
+  --card:                220 6% 12%;
+  --card-foreground:     40 12% 94%;
+  --muted:               220 6% 16%;
+  --muted-foreground:    38 6% 62%;
+  --border:              220 6% 22%;
+  --input:               220 6% 30%;
+  --primary:             40 14% 92%;
+  --primary-foreground:  220 8% 10%;
+  --ring:                40 14% 92%;
+  --destructive:         6 62% 52%;
+  --success:             142 38% 46%;
 
-  /* One width for the whole page. The poster used to cap at 1080px
-     while the text column capped at 640, so past 640px wide the two
-     drifted apart -- at 1440 the artwork was 440px wider than
-     everything under it, sitting as a lit rectangle with the body
-     colour showing down both sides. */
+  /* Squarer than the amber page's 0.85rem: this one is pretending to
+     be print, and print does not have soft corners. */
+  --radius:              0.35rem;
+
+  --hairline:            40 28% 88% / 0.10;
+
+  /* One width for the whole page. */
   --col:                 46rem;
 
-  /* The choice disc's diameter. Declared once because the page's
-     bottom padding has to clear the floating bar, and that clearance
-     is only correct if it tracks this. The 30vh arm keeps the bar off
-     most of a landscape phone. */
+  /* The choice disc's diameter. */
   --disc:                min(9.45rem, 34.2vw, 27vh);
-
-  /* The poster's hairline, reused on every card so the whole page
-     shares one edge treatment. */
-  --hairline:            40 55% 92% / 0.08;
+  --slate1:#26282C; --slate2:#18191C; --slate3:#0F1012;
+  --chalk:#F4F2EE; --chalk2:#B9B6AF;
+  --red:#C8342B;
+  --brush:"Xingkai SC","Weibei TC","Weibei SC","Baoli TC","STXingkai",
+          "GSK","GenSekiGothic2 TW",sans-serif;
 }
 
+/* One slate behind the whole page. Chalk scratches in two directions
+   over a mottled ground -- the reference's surface is a blackboard,
+   and a blackboard is never one flat colour. Fixed and out of flow,
+   so it covers the window whatever the content does and does not
+   become a flex item of body. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background:
+    repeating-linear-gradient(112deg,
+      rgba(255,255,255,.014) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-78deg,
+      rgba(255,255,255,.009) 0 1px, transparent 1px 14px),
+    radial-gradient(75% 45% at 28% 12%, rgba(255,255,255,.042), transparent 72%),
+    radial-gradient(65% 55% at 84% 88%, rgba(0,0,0,.40), transparent 72%),
+    linear-gradient(162deg, var(--slate1) 0%, var(--slate2) 46%, var(--slate3) 100%);
+}
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -79,74 +97,33 @@ body {
 }
 
 /* ============================================================
-   Poster — palette-C-amber. Every rule is scoped under .poster
-   because the poster and the page below both use .card, .rule and
-   .moon for entirely different things.
+   Poster — slate and brush.
 
-   Quieted down for the RSVP page over several passes. What came out:
-   the "肉菜酒玩" card, the badge above the eyebrow, the three taglines
-   on one line, the title's three stacked drop-shadows and its blurred
-   backplate, the cream info slab, the tick strip, two of the four
-   craters, and half the stars at half the brightness. The canvas came
-   down with all of it (1080x1350 → 1080x407) so the absences read as
-   a shorter poster rather than as holes.
+   A third direction, from a louder reference: blackboard ground, the
+   name in big dry brush, one red anchor, a Western date block, and
+   BBQ cut out of scratched stone.
 
-   What is left is a wordmark, a rule and the moon. Nothing in here is
-   information any more: the date and the time moved out to .facts
-   below, for the reason given there. Every length in this artboard is
-   a share of its own width, so on a phone it all shrinks together --
-   which makes it the wrong place for anything that has to stay
-   legible at a fixed size.
+   The brush is a system face, not an image -- 行楷 and 魏碑 both ship
+   with iOS and macOS, and either reads as a brush where a gothic
+   would read as a headline. It falls back to the embedded GSK, which
+   loses the brush but keeps the weight.
+
+   What the reference has and this cannot, again: photography. Here
+   the type does the whole job, which suits this reference better than
+   the last one -- its own title already carries most of its poster.
+
+   Same machinery as the other two: the band is full width, the
+   artboard is capped to --col and declares a container, and every
+   length inside is a share of that width in cqw.
    ============================================================ */
-/* The band runs the full width of the window and owns the night sky;
-   the artboard inside it is capped to the page's column. Without this
-   the artwork's warm lower edge ended in a hard vertical seam against
-   the body colour on any window wider than the poster.
-
-   It also holds the poster's palette, because the background below is
-   written in those tokens and everything inside inherits them. */
 .poster-band {
-  /* A floor in viewport height, so the header is not a thin strip over
-     a page with nothing in it. The page's content is short enough that
-     without this the leftover height piles up as one dead gap in the
-     middle; here it becomes sky around the moon instead. The wide
-     breakpoint raises it further. */
   min-height: 26vh;
   display: flex; flex-direction: column; justify-content: center;
-
-  --bg1:#090A0F; --bg2:#0D0D11; --bg3:#151310; --bg4:#201913;
-  --glow-lo:rgba(205,145,70,.11);
-  --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
-  --moon-glow1:rgba(244,234,206,.24); --moon-glow2:rgba(210,195,155,.12);
-  --accent:#C9924A;
-  --eyebrow:#C6AE85;
-  --title-hi:#F6E3BE; --title-lo:#C6823B;
-  --text3:#A49D92;
-  --star:#F0EDE3;
-  --latin:"Inter";
-  background:
-    radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
-    linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
+  /* The slate is on body::before; this is the light falling on it. */
+  background: radial-gradient(85% 120% at 26% 0%,
+    rgba(255,252,244,.05), transparent 70%);
 }
-/* A plain block between the band and the frame, so the frame resolves
-   its width against an ordinary block rather than through the flex
-   algorithm. Kept after the artboard went fluid: one less thing whose
-   size depends on which engine is asking. */
 .band-inner { width: 100%; }
-
-/* The artboard is fluid now, not a fixed 1080px canvas scaled to fit.
-   Every length inside it is a percentage of this box's width in cqw --
-   1cqw is 1% of it, so the old artboard's px values are simply
-   px/1080*100. That is why the frame declares the container.
-
-   What this replaced, and why: the poster used to be 1080x407 with
-   zoom set from a measured width, sitting in a frame with an
-   aspect-ratio. As a flex item that frame's width depended on how an
-   engine orders width:100% against the ratio, and WebKit and Chromium
-   order it differently -- on an iPhone the poster scaled to 736px
-   inside a 393px window and the title ran off the screen, while every
-   measurement in Chromium said it was fine. No measurement, no zoom,
-   no ratio, no ResizeObserver: nothing left to disagree about. */
 .poster-frame {
   width: 100%;
   max-width: min(var(--col), 100%);
@@ -155,53 +132,47 @@ body {
 }
 .poster {
   position:relative;width:100%;overflow:hidden;
-  /* The poster was authored against the browser default line-height.
-     Inheriting the page's 1.6 grows every element that does not set
-     its own. */
   line-height:normal;
-  font-family:var(--latin),"GSK","GenSekiGothic2 TW","Noto Sans TC",sans-serif;
-  /* No background: the band paints the sky, edge to edge. Anything
-     drawn on this box shows its rectangle the moment the window is
-     wider than the column. */
-  display:flex;flex-direction:column;padding:7.778cqw 7.222cqw 4.907cqw;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:3cqw;
+  padding:6cqw 7.222cqw 5.5cqw;
 }
-/* The poster was authored against a global `* { margin:0; padding:0 }`
-   reset. Scoped here so the form keeps its own spacing. */
 .poster * { margin:0; padding:0 }
-.poster > *{flex:0 0 auto}
-.poster .star{position:absolute;display:block;background:var(--star);border-radius:50%;z-index:0}
-.poster .moon{position:absolute;top:8.889cqw;right:9.259cqw;width:20.370cqw;height:20.370cqw;border-radius:50%;z-index:0;
-  background:radial-gradient(circle at 36% 30%,var(--moon1) 0%,var(--moon2) 58%,var(--moon3) 100%);
-  /* Reach stays inside the 8.889cqw above the moon and the 9.259cqw to
-     its right, so overflow:hidden never cuts the halo into a corner. */
-  box-shadow:0 0 3.333cqw 0.741cqw var(--moon-glow1),0 0 6.111cqw 2.222cqw var(--moon-glow2)}
-.poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.16)}
-.poster .c1{width:4.722cqw;height:4.722cqw;left:56%;top:44%}
-.poster .c2{width:2.407cqw;height:2.407cqw;left:24%;top:22%}
 
-.poster .z{position:relative;z-index:1}
-.poster .eng-top{color:var(--eyebrow);font-weight:600;font-size:2.037cqw;letter-spacing:0.556cqw;font-variation-settings:"opsz" 32}
-/* The ceiling is set by the moon, not by taste: four full-width
-   characters from the 7.222cqw gutter end at 59.1cqw, and the moon's
-   left edge is at 70.4cqw. Grow this past 16.4cqw and the title runs
-   under it. */
-.poster .title{margin-top:1.667cqw;font-weight:900;font-size:12.963cqw;letter-spacing:0;line-height:1.04;white-space:nowrap;
-  background:linear-gradient(180deg,var(--title-hi) 20%,var(--title-lo) 100%);
+/* Two brush characters to a line: four on one line at this size would
+   not fit the column, and the reference's own title is a stacked
+   block of two. */
+.poster .brush{font-family:var(--brush);font-weight:400;color:var(--chalk);
+  font-size:17cqw;line-height:0.94;letter-spacing:-0.9cqw;white-space:nowrap;
+  text-shadow:0 0.5cqw 1.6cqw rgba(0,0,0,.45)}
+
+.poster .eng{margin-top:2.2cqw;display:flex;align-items:baseline;gap:2.4cqw}
+/* BBQ cut out of scratched stone: the gradient is clipped to the
+   glyphs, and the scratches are a second gradient over the first. */
+.poster .bbq{font-family:"Inter",sans-serif;font-weight:900;font-size:8.4cqw;
+  line-height:0.9;letter-spacing:0.2cqw;
+  background:
+    repeating-linear-gradient(97deg, rgba(0,0,0,.34) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg,#A2A5AB 0%,#6B6E74 52%,#44464C 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
-.poster .eng-sub{margin-top:1.481cqw;color:var(--text3);font-weight:600;font-size:2.130cqw;letter-spacing:0.648cqw;font-variation-settings:"opsz" 32}
-.poster .rule{margin-top:3.148cqw;width:16.667cqw;height:0.185cqw;background:var(--accent)}
+.poster .eyebrow{font-family:"Inter",sans-serif;font-weight:700;
+  font-size:1.9cqw;letter-spacing:0.42cqw;color:var(--chalk2);white-space:nowrap}
 
-
-
+/* The date block, the reference's one piece of Western type at scale.
+   The numeral is the only red on the page, so it lands where the eye
+   goes after the brush. */
+.poster .date{flex:0 0 auto;text-align:right;padding-top:1.2cqw}
+.poster .dm,.poster .dw{font-family:"Inter",sans-serif;font-weight:800;
+  font-size:3.1cqw;letter-spacing:0.46cqw;color:var(--chalk2);
+  text-indent:0.46cqw}
+.poster .dd{font-family:"Inter",sans-serif;font-weight:900;font-size:13cqw;
+  line-height:0.84;letter-spacing:-0.3cqw;color:var(--red);margin:0.6cqw 0}
+.poster .drule{margin:1.8cqw 0 0 auto;width:8cqw;height:0.28cqw;background:var(--red)}
 /* ============================================================
    The page below the poster
    ============================================================ */
 main {
-  /* Carry the poster's warm bottom edge (--bg4) down into the page
-     instead of cutting to black at its last pixel. */
-  background: linear-gradient(180deg,
-    hsl(27 25% 10%) 0,
-    hsl(var(--background)) 34rem);
+  /* No background of its own: the board on body::before runs straight
+     through, so there is no edge here to see. */
   /* No top padding: .facts butts against the poster's bottom edge on
      purpose. That is only safe because .facts carries no top margin --
      a margin on the first thing in here would collapse out through
@@ -285,12 +256,12 @@ main .card {
 .facts > div { flex: 1; text-align: center; padding: 1.125rem 0.5rem; }
 .facts > div + div { border-left: 1px solid hsl(var(--border)); }
 .facts dt {
+  color: var(--red);
   font-size: 0.75rem; font-weight: 600;
   /* The tracking hangs an extra gap off the last letter; the indent
      puts the same gap on the left so the label stays optically
      centred over its value. */
   letter-spacing: 0.3em; text-indent: 0.3em;
-  color: hsl(var(--primary));
 }
 .facts dd {
   margin: 0.5rem 0 0;
@@ -477,10 +448,13 @@ button:disabled { opacity: 0.5; cursor: default; }
   /* Fades the page out behind the discs rather than cutting it with a
      hard edge; opaque by the time it reaches the captions so they stay
      legible over whatever is scrolling past. */
+  /* Stops short of opaque on purpose: at full strength it cut a flat
+     rectangle out of the slate's texture. --slate3 in rgba, because
+     the token is a hex and this needs an alpha. */
   background: linear-gradient(180deg,
-    hsl(var(--background) / 0) 0,
-    hsl(var(--background) / 0.94) 24%,
-    hsl(var(--background)) 52%);
+    rgba(15,16,18,0) 0,
+    rgba(15,16,18,.72) 12%,
+    rgba(15,16,18,.94) 34%);
   /* The transparent top of the bar must not eat clicks meant for the
      page underneath it. */
   pointer-events: none;
@@ -565,45 +539,28 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 <div class="band-inner">
 <div class="poster-frame">
 <div class="poster" id="poster">
-  <div class="moon"><div class="crater c1"></div><div class="crater c2"></div></div>
 
-  <div class="eng-top z">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</div>
-  <h1 class="title z">中秋烤肉</h1>
-  <div class="eng-sub z">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON<span style="letter-spacing:0">.</span></div>
-  <div class="rule z"></div>
+  <div class="left">
+    <div class="brush">中秋</div>
+    <div class="brush">烤肉</div>
+    <div class="eng">
+      <span class="bbq">BBQ</span>
+      <span class="eyebrow">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</span>
+    </div>
+  </div>
+
+  <div class="date">
+    <div class="dm">SEP</div>
+    <div class="dd">26</div>
+    <div class="dw">SAT</div>
+    <div class="drule"></div>
+  </div>
+
 </div>
 </div>
 </div>
 </header>
 
-<script>
-/* The poster's own starfield, tick strip and fit-to-width scaling.
-   Runs here, right after the markup, so the artwork is sized before
-   the form below it paints. */
-(function () {
-  const poster = document.getElementById("poster");
-  const rand   = (a, b) => a + Math.random() * (b - a);
-
-  /* Placed in cqw, the same unit the stylesheet uses -- 1% of the
-     poster's width. The artboard is fluid, so there is no pixel size
-     to pin them to, and nothing here needs measuring or re-running on
-     resize. Stars sit in the top 18.5cqw only: that is where the
-     gradient is still night sky, before it warms into ember lower
-     down. Half the count and a dimmer range than the original poster
-     carried -- at full strength the field competes with the moon, and
-     the moon should be the only bright thing up there. */
-  for (let i = 0; i < 30; i++) {
-    const s = document.createElement("i");
-    const size = rand(0.111, 0.259);
-    s.className = "star";
-    s.style.width = s.style.height = size + "cqw";
-    s.style.left = rand(0, 100) + "cqw";
-    s.style.top = rand(0, 18.5) + "cqw";
-    s.style.opacity = rand(.18, .7);
-    poster.appendChild(s);
-  }
-})();
-</script>
 
 <main>
 <div class="wrap">
