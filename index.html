@@ -130,9 +130,20 @@ body {
     radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
     linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
 }
+/* A plain block between the band and the frame, and it is not
+   cosmetic. The frame carries an aspect-ratio, and as a direct flex
+   item WebKit sizes it from that ratio against its content height
+   rather than honouring width:100% -- on an iPhone it came out 736px
+   (the --col cap) inside a 393px window, so the artboard scaled to the
+   wrong width and the title ran off the screen. Chromium resolved the
+   same CSS the other way, which is why this only appeared on a real
+   phone. A block parent makes the percentage unambiguous. */
+.band-inner { width: 100%; }
 .poster-frame {
   width: 100%;
-  max-width: var(--col);
+  /* Second guard, independent of the one above: whatever route an
+     engine takes to this box's width, it cannot exceed its container. */
+  max-width: min(var(--col), 100%);
   margin: 0 auto;
   /* Reserves the correct height before fit() runs, so the page
      below never jumps, and clips the poster if the two ever
@@ -531,6 +542,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 <body>
 
 <header class="poster-band">
+<div class="band-inner">
 <div class="poster-frame">
 <div class="poster" id="poster">
   <div class="moon"><div class="crater c1"></div><div class="crater c2"></div></div>
@@ -539,6 +551,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   <h1 class="title z">中秋烤肉</h1>
   <div class="eng-sub z">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON<span style="letter-spacing:0">.</span></div>
   <div class="rule z"></div>
+</div>
 </div>
 </div>
 </header>
