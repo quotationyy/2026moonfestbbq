@@ -74,7 +74,7 @@ body {
    on one line, the title's three stacked drop-shadows and its blurred
    backplate, the cream info slab, the tick strip, two of the four
    craters, and half the stars at half the brightness. The canvas came
-   down with all of it (1080x1350 → 1080x430) so the absences read as
+   down with all of it (1080x1350 → 1080x407) so the absences read as
    a shorter poster rather than as holes.
 
    What is left is a wordmark, a rule and the moon. Nothing in here is
@@ -93,7 +93,7 @@ body {
   /* Reserves the correct height before fit() runs, so the page
      below never jumps, and clips the poster if the two ever
      disagree by a pixel. */
-  aspect-ratio: 1080 / 430;
+  aspect-ratio: 1080 / 407;
   overflow: hidden;
 }
 .poster {
@@ -107,7 +107,7 @@ body {
   --text3:#A49D92;
   --star:#F0EDE3;
   --latin:"Inter";
-  position:relative;width:1080px;height:430px;overflow:hidden;
+  position:relative;width:1080px;height:407px;overflow:hidden;
   /* The poster was laid out against the browser default line-height.
      Inheriting the page's 1.6 grows every element that does not set
      its own and pushes the footer past the fixed height, where
@@ -118,7 +118,7 @@ body {
     radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
     radial-gradient(760px 460px at 86% 12%, var(--glow-moon), transparent 62%),
     linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
-  display:flex;flex-direction:column;padding:84px 78px 42px;
+  display:flex;flex-direction:column;padding:84px 78px 53px;
 }
 /* The poster was authored against a global `* { margin:0; padding:0 }`
    reset. Scoped here so the form keeps its own spacing. */
@@ -456,7 +456,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   const frame  = poster.parentNode;
   const rand   = (a, b) => a + Math.random() * (b - a);
 
-  /* Stars sit in the top 210px only — that is where the gradient is
+  /* Stars sit in the top 200px only — that is where the gradient is
      still night sky, before it warms into ember at the bottom. Half
      the count and a dimmer range than the original poster carried:
      at full strength the field competes with the moon, and the moon
@@ -467,12 +467,12 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
     s.className = "star";
     s.style.width = s.style.height = size + "px";
     s.style.left = rand(0, 1080) + "px";
-    s.style.top = rand(0, 210) + "px";
+    s.style.top = rand(0, 200) + "px";
     s.style.opacity = rand(.18, .7);
     poster.appendChild(s);
   }
 
-  /* The poster is drawn at a fixed 1080x430 and scaled to whatever
+  /* The poster is drawn at a fixed 1080x407 and scaled to whatever
      width it gets. zoom (not transform) so the frame's layout height
      follows the scale on its own. */
   const fit = () => { poster.style.zoom = Math.min(frame.clientWidth / 1080, 1); };
