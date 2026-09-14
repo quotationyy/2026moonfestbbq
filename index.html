@@ -59,6 +59,13 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   padding: 0;
+  /* The page is a column that always fills the window, so main can take
+     whatever height the poster leaves and hand it to #app below. svh
+     rather than vh: on a phone vh is the height with the browser's bars
+     hidden, which would make the page taller than what you can see. */
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex; flex-direction: column;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   /* "Inter" is deliberately absent: the copy embedded above is a
@@ -101,6 +108,14 @@ body {
    It also holds the poster's palette, because the background below is
    written in those tokens and everything inside inherits them. */
 .poster-band {
+  /* A floor in viewport height, so the header is not a thin strip over
+     a page with nothing in it. The page's content is short enough that
+     without this the leftover height piles up as one dead gap in the
+     middle; here it becomes sky around the moon instead. The wide
+     breakpoint raises it further. */
+  min-height: 26vh;
+  display: flex; flex-direction: column; justify-content: center;
+
   --bg1:#090A0F; --bg2:#0D0D11; --bg3:#151310; --bg4:#201913;
   --glow-lo:rgba(205,145,70,.11);
   --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
@@ -178,11 +193,19 @@ main {
      main and become main's own, opening a strip of bare body
      background under the poster. That seam was a real bug once. */
   padding: 0 0 6rem;
+  flex: 1 0 auto;
+  display: flex; flex-direction: column;
 }
 /* Only while the discs are up: the page has to end above them, and the
    clearance tracks --disc so it stays right at every width. */
 body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
-.wrap { max-width: var(--col); margin: 0 auto; padding: 0 1rem; }
+.wrap {
+  /* width:100% is load-bearing now that this is a flex item: auto
+     inline margins opt it out of stretching, so without it the box
+     shrinks to its content and stops lining up with the poster. */
+  width: 100%; max-width: var(--col); margin: 0 auto; padding: 0 1rem;
+  flex: 1 0 auto; display: flex; flex-direction: column;
+}
 /* Above the facts row's own breaking point, line the content's gutter
    up with the poster's, so the date row's rule starts under the title's
    left edge. The artboard's gutter is 78 of 1080, so the target is
@@ -216,7 +239,7 @@ body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
     display: flex; flex-direction: column; justify-content: center;
   }
 }
-#app { margin-top: 2.25rem; }
+#app { padding-top: 2.25rem; margin-block: auto; }
 #app > :first-child { margin-top: 0; }
 
 /* ---------- Card ----------
@@ -269,7 +292,7 @@ main .card {
    date, the time and the price, so this only has to say why anyone is
    being asked to press a button. */
 .lede { color: hsl(var(--muted-foreground)); }
-.lede p { margin: 0 0 0.6rem; }
+.lede p { margin: 0 0 0.6rem; text-wrap: pretty; }
 .lede p:last-child { margin-bottom: 0; }
 
 /* ---------- Footnotes under the choices ---------- */
@@ -281,7 +304,7 @@ main .card {
   display: grid; gap: 0.625rem;
   font-size: 0.8125rem; color: hsl(var(--muted-foreground));
 }
-.notes p { margin: 0; }
+.notes p { margin: 0; text-wrap: pretty; }
 .notes strong {
   color: hsl(var(--foreground));
   font-weight: 600; margin-inline-end: 0.6rem;
