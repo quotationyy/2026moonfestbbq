@@ -404,25 +404,27 @@ button:disabled { opacity: 0.5; cursor: default; }
 [hidden] { display: none !important; }
 
 /* ---------- The host's Instagram ----------
-   Pinned to the corner, and it stays there through every view because
-   it lives outside #app. It shares that corner with the floating
-   choices bar, which is why it is small and hard against the edge:
-   the nearest disc is a circle, so down here -- well below the disc's
-   widest point -- there is room for it that a square of the same
-   height would not have had. */
+   Inline at the end of the footnote that names it, rather than parked
+   in a corner: it is the only way to reach the host from this page, so
+   it should read as part of the sentence. Amber and larger than the
+   surrounding 13px text on purpose -- it is the one thing in this
+   block anyone is meant to press. */
 .ig {
-  position: fixed; z-index: 30;
-  right: 0.375rem; bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
-  display: grid; place-content: center;
-  width: 2.25rem; height: 2.25rem;
-  border-radius: 50%;
-  color: hsl(var(--muted-foreground));
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle;
+  margin-inline-start: 0.4rem;
+  width: 1.875rem; height: 1.875rem;
+  border-radius: 0.5rem;
+  color: hsl(var(--primary));
   transition: color .12s, background .12s;
 }
-.ig svg { display: block; width: 1.125rem; height: 1.125rem; }
-.ig:hover { color: hsl(var(--foreground)); background: hsl(var(--muted) / 0.7); }
+.ig svg { display: block; width: 1.5rem; height: 1.5rem; }
+.ig:hover {
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+}
 .ig:focus-visible {
-  outline: none; color: hsl(var(--foreground));
+  outline: none;
   box-shadow: 0 0 0 3px hsl(var(--ring) / 0.4);
 }
 
@@ -599,16 +601,6 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 </div>
 </main>
 
-<a class="ig" href="https://www.instagram.com/quotation.yy/"
-   target="_blank" rel="noopener noreferrer"
-   aria-label="Instagram @quotation.yy">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="2.5" y="2.5" width="19" height="19" rx="5.4"/>
-    <circle cx="12" cy="12" r="4.2"/>
-    <circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/>
-  </svg>
-</a>
 
 <script>
 /* ============================================================
@@ -631,7 +623,7 @@ const EVENT = {
   ],
   notes: [
     ["退款方式", "會以當初填寫的退款帳號退款，退款完成會 email 通知。"],
-    ["有問題", "點右下角的 IG 直接私訊我。"]
+    ["有問題", "IG 直接私訊我。", "https://www.instagram.com/quotation.yy/"]
   ]
 };
 
@@ -651,6 +643,15 @@ const CHOICES = {
     done:    ["已收到回覆", "這回沒能一起，下次再約。退款我會私訊你。"]
   }
 };
+
+/* Instagram 的字符。inline SVG 而不是外連圖檔：這個 repo 沒有
+   build step，頁面也要能直接從磁碟開啟。 */
+const IG_MARK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="2.5" y="2.5" width="19" height="19" rx="5.4"/>
+  <circle cx="12" cy="12" r="4.2"/>
+  <circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/>
+</svg>`;
 
 /* 介面文字。要改語言只改這裡。 */
 const MSG = {
@@ -696,8 +697,11 @@ function chooseView() {
   return `
     <div class="lede">${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}</div>
     <div class="notes">
-      ${EVENT.notes.map(([h, t]) =>
-        `<p><strong>${esc(h)}</strong>${esc(t)}</p>`).join("")}
+      ${EVENT.notes.map(([h, t, href]) => `<p>
+        <strong>${esc(h)}</strong>${esc(t)}${href ? `<a class="ig"
+          href="${esc(href)}" target="_blank" rel="noopener noreferrer"
+          aria-label="Instagram @quotation.yy">${IG_MARK}</a>` : ""}
+      </p>`).join("")}
     </div>
     <div class="choices">${Object.keys(CHOICES).map(btn).join("")}</div>`;
 }
