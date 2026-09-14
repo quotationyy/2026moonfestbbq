@@ -495,6 +495,23 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 .done .who { color: hsl(var(--foreground)); font-weight: 700; }
 .done .again { margin-top: 1.5rem; }
 .done p + p { margin-top: 0.5rem; }
+/* Past a window this tall the page has already fitted with room to
+   spare, so "always within reach" is automatic and a bar pinned to the
+   bottom of it is a thousand pixels from the text it belongs to. The
+   discs rejoin the flow, main stops stretching, and body centres the
+   whole thing -- poster, copy and buttons as one block in the middle
+   of the paper, rather than three pieces scattered down it. */
+@media (min-height: 62rem) {
+  body { justify-content: center; }
+  main { flex: 0 0 auto; }
+  #app { margin-block: 0; }
+  .choices {
+    position: static; pointer-events: auto;
+    background: none; padding: 3.25rem 0 0;
+  }
+  body.picking main { padding-bottom: 3rem; }
+}
+
 </style>
 </head>
 <body>
