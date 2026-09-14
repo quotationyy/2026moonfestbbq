@@ -68,13 +68,19 @@ body {
    on one line, the title's three stacked drop-shadows and its blurred
    backplate, the cream info slab, the tick strip, two of the four
    craters, and half the stars at half the brightness. The canvas came
-   down with all of it (1080x1350 → 1080x820) so the absences read as
+   down with all of it (1080x1350 → 1080x700) so the absences read as
    a shorter poster rather than as holes.
 
-   What stayed: the moon, the warm gradient on the title, and one
-   amber hairline. The details sit in a plain ruled row now instead of
-   on a light panel, which is what lets the moon be the only bright
-   thing up there.
+   What is left is a wordmark, a rule, and one ruled row saying when.
+   The moon is the only bright thing up there, which is the whole
+   reason the details sit on hairlines rather than on a light panel.
+
+   margin-top:auto on that row is what holds the composition: the type
+   block sits at the top, the row sits on the bottom edge, and every
+   removal so far has just made the gap between them grow until the
+   canvas was cut to match. Change the height and that is the number
+   to re-check -- along with the starfield's bound, which is tied to
+   it.
    ============================================================ */
 .poster-frame {
   width: 100%;
@@ -83,7 +89,7 @@ body {
   /* Reserves the correct height before fit() runs, so the page
      below never jumps, and clips the poster if the two ever
      disagree by a pixel. */
-  aspect-ratio: 1080 / 820;
+  aspect-ratio: 1080 / 700;
   overflow: hidden;
 }
 .poster {
@@ -97,7 +103,7 @@ body {
   --text1:#F3F0E9; --text3:#A49D92;
   --star:#F0EDE3; --hair:rgba(246,227,190,.14);
   --latin:"Inter";
-  position:relative;width:1080px;height:820px;overflow:hidden;
+  position:relative;width:1080px;height:700px;overflow:hidden;
   /* The poster was laid out against the browser default line-height.
      Inheriting the page's 1.6 grows every element that does not set
      its own and pushes the footer past the fixed height, where
@@ -146,11 +152,6 @@ body {
 .poster .big{color:var(--text1);font-weight:600;font-variation-settings:"opsz" 32;font-size:52px;margin-top:14px;line-height:1.05;white-space:nowrap}
 .poster .sm{color:var(--text3);font-size:22px;margin-top:10px;white-space:nowrap}
 
-.poster .foot{margin-top:46px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-.poster .foot h4{font-size:29px;font-weight:700;color:var(--text1);letter-spacing:2px}
-.poster .foot p{margin-top:8px;font-size:22px;color:var(--text3);letter-spacing:2px}
-.poster .host{color:var(--accent);opacity:.7;display:flex;align-items:center}
-.poster .host svg{display:block;width:26px;height:auto}
 
 /* ============================================================
    The page below the poster
@@ -305,18 +306,27 @@ button:disabled { opacity: 0.5; cursor: default; }
    left untouched.
    ============================================================ */
 
-.choices { display: grid; gap: 0.75rem; }
-
-/* A choice is a button that has to carry two lines, so it opts out
-   of the fixed button height rather than fighting it. */
-.choice {
-  display: grid; gap: 0.2rem;
-  height: auto; padding: 1rem 1.25rem;
-  text-align: start; white-space: normal;
+.choices {
+  display: flex; align-items: start; justify-content: center;
+  gap: clamp(1.25rem, 7vw, 3rem);
 }
-.choice .big { font-size: 1.0625rem; font-weight: 800; }
-.choice .sub { font-size: 0.8125rem; font-weight: 500; opacity: 0.72;
-               letter-spacing: 0; }
+.pick { display: grid; gap: 0.875rem; width: min(10.5rem, 38vw); }
+
+/* A disc, so it opts out of the fixed button height rather than
+   fighting it. The caption stays outside: a circle's usable width is
+   only about 70% of its diameter, and a second line inside would push
+   the disc wider than two of them fit at 375px. */
+.choice {
+  width: 100%; height: auto; aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid; place-content: center;
+  padding: 0; white-space: nowrap;
+  font-size: 1.0625rem; font-weight: 800; letter-spacing: 0.06em;
+}
+.cap {
+  font-size: 0.75rem; line-height: 1.5; text-align: center;
+  color: hsl(var(--muted-foreground));
+}
 
 /* The "can't make it" path gets the quiet outline, not destructive
    red: red reads as "something went wrong" on a button people are
@@ -380,13 +390,6 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
     <div class="col"><div class="lab">時間</div><div class="big">17:30</div><div class="sm">– 23:00</div></div>
   </div>
 
-  <div class="foot z">
-    <div>
-      <h4>北投・奇岩站・豐禾公寓大廈</h4>
-      <p>捷運站步行可到</p>
-    </div>
-    <div class="host"><svg viewBox="0 0 105 75" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="brand mark"><path d="M7.5 75H30L45 45V0H0V45H22.5L7.5 75ZM67.5 75H90L105 45V0H60V45H82.5L67.5 75Z" fill="currentColor"/></svg></div>
-  </div>
 
 </div>
 </header>
@@ -400,7 +403,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   const frame  = poster.parentNode;
   const rand   = (a, b) => a + Math.random() * (b - a);
 
-  /* Stars sit in the top 410px only — that is where the gradient is
+  /* Stars sit in the top 350px only — that is where the gradient is
      still night sky, before it warms into ember at the bottom. Half
      the count and a dimmer range than the original poster carried:
      at full strength the field competes with the moon, and the moon
@@ -411,12 +414,12 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
     s.className = "star";
     s.style.width = s.style.height = size + "px";
     s.style.left = rand(0, 1080) + "px";
-    s.style.top = rand(0, 410) + "px";
+    s.style.top = rand(0, 350) + "px";
     s.style.opacity = rand(.18, .7);
     poster.appendChild(s);
   }
 
-  /* The poster is drawn at a fixed 1080x820 and scaled to whatever
+  /* The poster is drawn at a fixed 1080x700 and scaled to whatever
      width it gets. zoom (not transform) so the frame's layout height
      follows the scale on its own. */
   const fit = () => { poster.style.zoom = Math.min(frame.clientWidth / 1080, 1); };
@@ -512,11 +515,11 @@ let choice = null;
 function chooseView() {
   const btn = (id) => {
     const c = CHOICES[id];
-    return `<button type="button" class="choice${id === "attending" ? "" : " outline"}"
-                    data-choice="${esc(id)}">
-      <span class="big">${esc(c.button[0])}</span>
-      <span class="sub">${esc(c.button[1])}</span>
-    </button>`;
+    return `<div class="pick">
+      <button type="button" class="choice${id === "attending" ? "" : " outline"}"
+              data-choice="${esc(id)}">${esc(c.button[0])}</button>
+      <span class="cap">${esc(c.button[1])}</span>
+    </div>`;
   };
   return `
     <div class="lede">${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}</div>
