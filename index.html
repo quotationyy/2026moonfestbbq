@@ -36,6 +36,13 @@
   --success:             142 55% 50%;
   --radius:              0.85rem;
 
+  /* One width for the whole page. The poster used to cap at 1080px
+     while the text column capped at 640, so past 640px wide the two
+     drifted apart -- at 1440 the artwork was 440px wider than
+     everything under it, sitting as a lit rectangle with the body
+     colour showing down both sides. */
+  --col:                 46rem;
+
   /* The choice disc's diameter. Declared once because the page's
      bottom padding has to clear the floating bar, and that clearance
      is only correct if it tracks this. The 30vh arm keeps the bar off
@@ -86,17 +93,14 @@ body {
    If you change the height, re-check the starfield's bound and count.
    Both are tied to it.
    ============================================================ */
-.poster-frame {
-  width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  /* Reserves the correct height before fit() runs, so the page
-     below never jumps, and clips the poster if the two ever
-     disagree by a pixel. */
-  aspect-ratio: 1080 / 407;
-  overflow: hidden;
-}
-.poster {
+/* The band runs the full width of the window and owns the night sky;
+   the artboard inside it is capped to the page's column. Without this
+   the artwork's warm lower edge ended in a hard vertical seam against
+   the body colour on any window wider than the poster.
+
+   It also holds the poster's palette, because the background below is
+   written in those tokens and everything inside inherits them. */
+.poster-band {
   --bg1:#090A0F; --bg2:#0D0D11; --bg3:#151310; --bg4:#201913;
   --glow-lo:rgba(205,145,70,.11); --glow-moon:rgba(240,232,210,.06);
   --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
@@ -107,6 +111,21 @@ body {
   --text3:#A49D92;
   --star:#F0EDE3;
   --latin:"Inter";
+  background:
+    radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
+    linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
+}
+.poster-frame {
+  width: 100%;
+  max-width: var(--col);
+  margin: 0 auto;
+  /* Reserves the correct height before fit() runs, so the page
+     below never jumps, and clips the poster if the two ever
+     disagree by a pixel. */
+  aspect-ratio: 1080 / 407;
+  overflow: hidden;
+}
+.poster {
   position:relative;width:1080px;height:407px;overflow:hidden;
   /* The poster was laid out against the browser default line-height.
      Inheriting the page's 1.6 grows every element that does not set
@@ -114,10 +133,11 @@ body {
      overflow:hidden silently eats it. */
   line-height:normal;
   font-family:var(--latin),"GSK","GenSekiGothic2 TW","Noto Sans TC",sans-serif;
+  /* Only the moon's halo. It is tied to where the moon is drawn, so it
+     scales with the artwork; the ambient wash and the night sky belong
+     to the band, which is full width. */
   background:
-    radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
-    radial-gradient(760px 460px at 86% 12%, var(--glow-moon), transparent 62%),
-    linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
+    radial-gradient(760px 460px at 86% 12%, var(--glow-moon), transparent 62%);
   display:flex;flex-direction:column;padding:84px 78px 53px;
 }
 /* The poster was authored against a global `* { margin:0; padding:0 }`
@@ -164,7 +184,31 @@ main {
 /* Only while the discs are up: the page has to end above them, and the
    clearance tracks --disc so it stays right at every width. */
 body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
-.wrap { max-width: 40rem; margin: 0 auto; padding: 0 1rem; }
+.wrap { max-width: var(--col); margin: 0 auto; padding: 0 1rem; }
+/* Above the facts row's own breaking point, line the content's gutter
+   up with the poster's, so the date row's rule starts under the title's
+   left edge. The artboard's gutter is 78 of 1080, so the target is
+   7.22% of the column -- but a percentage padding resolves against the
+   containing block, not the element, and main is the full window. Hence
+   the min(): 7.22vw while the column is still viewport-width, then flat
+   once it caps (7.22% of 46rem is 3.32rem). Below 40rem the same gutter
+   would squeeze the two facts columns until the longer date wraps, so
+   the flat 1rem stands there. */
+@media (min-width: 40rem) {
+  .wrap { padding-inline: min(7.22vw, 3.32rem); }
+
+  /* Once the artwork stops growing with the window, a tall screen
+     turns the hero into a thin strip with a lot of nothing under it.
+     Giving the band a floor in viewport height and centring the
+     artboard in it buys back sky above and below the moon instead,
+     and takes that emptiness out of the middle of the page. Phones
+     are excluded: there 38vh would more than double a header that is
+     already the right size. */
+  .poster-band {
+    min-height: 38vh;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+}
 #app { margin-top: 2.25rem; }
 #app > :first-child { margin-top: 0; }
 
@@ -456,7 +500,8 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 </head>
 <body>
 
-<header class="poster-frame">
+<header class="poster-band">
+<div class="poster-frame">
 <div class="poster" id="poster">
   <div class="moon"><div class="crater c1"></div><div class="crater c2"></div></div>
 
@@ -464,6 +509,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   <h1 class="title z">中秋烤肉</h1>
   <div class="eng-sub z">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON<span style="letter-spacing:0">.</span></div>
   <div class="rule z"></div>
+</div>
 </div>
 </header>
 
