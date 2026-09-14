@@ -93,12 +93,10 @@ body {
 
    What is left is a wordmark, a rule and the moon. Nothing in here is
    information any more: the date and the time moved out to .facts
-   below, for the reason given there. Everything in this artboard is
-   scaled by the poster's zoom, which makes it the wrong place for
-   anything that has to stay legible.
-
-   If you change the height, re-check the starfield's bound and count.
-   Both are tied to it.
+   below, for the reason given there. Every length in this artboard is
+   a share of its own width, so on a phone it all shrinks together --
+   which makes it the wrong place for anything that has to stay
+   legible at a fixed size.
    ============================================================ */
 /* The band runs the full width of the window and owns the night sky;
    the artboard inside it is capped to the page's column. Without this
@@ -130,62 +128,68 @@ body {
     radial-gradient(1000px 560px at 50% 122%, var(--glow-lo), transparent 62%),
     linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 42%,var(--bg3) 78%,var(--bg4) 100%);
 }
-/* A plain block between the band and the frame, and it is not
-   cosmetic. The frame carries an aspect-ratio, and as a direct flex
-   item WebKit sizes it from that ratio against its content height
-   rather than honouring width:100% -- on an iPhone it came out 736px
-   (the --col cap) inside a 393px window, so the artboard scaled to the
-   wrong width and the title ran off the screen. Chromium resolved the
-   same CSS the other way, which is why this only appeared on a real
-   phone. A block parent makes the percentage unambiguous. */
+/* A plain block between the band and the frame, so the frame resolves
+   its width against an ordinary block rather than through the flex
+   algorithm. Kept after the artboard went fluid: one less thing whose
+   size depends on which engine is asking. */
 .band-inner { width: 100%; }
+
+/* The artboard is fluid now, not a fixed 1080px canvas scaled to fit.
+   Every length inside it is a percentage of this box's width in cqw --
+   1cqw is 1% of it, so the old artboard's px values are simply
+   px/1080*100. That is why the frame declares the container.
+
+   What this replaced, and why: the poster used to be 1080x407 with
+   zoom set from a measured width, sitting in a frame with an
+   aspect-ratio. As a flex item that frame's width depended on how an
+   engine orders width:100% against the ratio, and WebKit and Chromium
+   order it differently -- on an iPhone the poster scaled to 736px
+   inside a 393px window and the title ran off the screen, while every
+   measurement in Chromium said it was fine. No measurement, no zoom,
+   no ratio, no ResizeObserver: nothing left to disagree about. */
 .poster-frame {
   width: 100%;
-  /* Second guard, independent of the one above: whatever route an
-     engine takes to this box's width, it cannot exceed its container. */
   max-width: min(var(--col), 100%);
   margin: 0 auto;
-  /* Reserves the correct height before fit() runs, so the page
-     below never jumps, and clips the poster if the two ever
-     disagree by a pixel. */
-  aspect-ratio: 1080 / 407;
-  overflow: hidden;
+  container-type: inline-size;
 }
 .poster {
-  position:relative;width:1080px;height:407px;overflow:hidden;
-  /* The poster was laid out against the browser default line-height.
+  position:relative;width:100%;overflow:hidden;
+  /* The poster was authored against the browser default line-height.
      Inheriting the page's 1.6 grows every element that does not set
-     its own and pushes the footer past the fixed height, where
-     overflow:hidden silently eats it. */
+     its own. */
   line-height:normal;
   font-family:var(--latin),"GSK","GenSekiGothic2 TW","Noto Sans TC",sans-serif;
   /* No background: the band paints the sky, edge to edge. Anything
      drawn on this box shows its rectangle the moment the window is
      wider than the column. */
-  display:flex;flex-direction:column;padding:84px 78px 53px;
+  display:flex;flex-direction:column;padding:7.778cqw 7.222cqw 4.907cqw;
 }
 /* The poster was authored against a global `* { margin:0; padding:0 }`
    reset. Scoped here so the form keeps its own spacing. */
 .poster * { margin:0; padding:0 }
 .poster > *{flex:0 0 auto}
 .poster .star{position:absolute;display:block;background:var(--star);border-radius:50%;z-index:0}
-.poster .moon{position:absolute;top:96px;right:100px;width:220px;height:220px;border-radius:50%;z-index:0;
+.poster .moon{position:absolute;top:8.889cqw;right:9.259cqw;width:20.370cqw;height:20.370cqw;border-radius:50%;z-index:0;
   background:radial-gradient(circle at 36% 30%,var(--moon1) 0%,var(--moon2) 58%,var(--moon3) 100%);
-  box-shadow:0 0 36px 8px var(--moon-glow1),0 0 66px 24px var(--moon-glow2)}
+  /* Reach stays inside the 8.889cqw above the moon and the 9.259cqw to
+     its right, so overflow:hidden never cuts the halo into a corner. */
+  box-shadow:0 0 3.333cqw 0.741cqw var(--moon-glow1),0 0 6.111cqw 2.222cqw var(--moon-glow2)}
 .poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.16)}
-.poster .c1{width:51px;height:51px;left:56%;top:44%}
-.poster .c2{width:26px;height:26px;left:24%;top:22%}
+.poster .c1{width:4.722cqw;height:4.722cqw;left:56%;top:44%}
+.poster .c2{width:2.407cqw;height:2.407cqw;left:24%;top:22%}
 
 .poster .z{position:relative;z-index:1}
-.poster .eng-top{color:var(--eyebrow);font-weight:600;font-size:22px;letter-spacing:6px;font-variation-settings:"opsz" 32}
+.poster .eng-top{color:var(--eyebrow);font-weight:600;font-size:2.037cqw;letter-spacing:0.556cqw;font-variation-settings:"opsz" 32}
 /* The ceiling is set by the moon, not by taste: four full-width
-   characters from the 78px gutter end at x=638, and the moon's left
-   edge is x=788. Grow this past 177px and the title runs under it. */
-.poster .title{margin-top:18px;font-weight:900;font-size:140px;letter-spacing:0;line-height:1.04;white-space:nowrap;
+   characters from the 7.222cqw gutter end at 59.1cqw, and the moon's
+   left edge is at 70.4cqw. Grow this past 16.4cqw and the title runs
+   under it. */
+.poster .title{margin-top:1.667cqw;font-weight:900;font-size:12.963cqw;letter-spacing:0;line-height:1.04;white-space:nowrap;
   background:linear-gradient(180deg,var(--title-hi) 20%,var(--title-lo) 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
-.poster .eng-sub{margin-top:16px;color:var(--text3);font-weight:600;font-size:23px;letter-spacing:7px;font-variation-settings:"opsz" 32}
-.poster .rule{margin-top:34px;width:180px;height:2px;background:var(--accent)}
+.poster .eng-sub{margin-top:1.481cqw;color:var(--text3);font-weight:600;font-size:2.130cqw;letter-spacing:0.648cqw;font-variation-settings:"opsz" 32}
+.poster .rule{margin-top:3.148cqw;width:16.667cqw;height:0.185cqw;background:var(--accent)}
 
 
 
@@ -267,12 +271,12 @@ main .card {
 }
 
 /* ---------- The event's hard facts ----------
-   These live out here rather than inside the poster because
-   everything in that artboard is scaled by the poster's zoom: at
-   375px the date was rendering at 11px, smaller than the body text
-   underneath it. Out here they keep the page's own type scale on
-   every screen, which is the point -- they are the two things a
-   reader might actually need to check before answering. */
+   These live out here rather than inside the poster because every
+   length in that artboard is a share of its width: at 375px the date
+   was rendering at 11px, smaller than the body text underneath it.
+   Out here they keep the page's own type scale on every screen, which
+   is the point -- they are the two things a reader might actually
+   need to check before answering. */
 .facts {
   display: flex; margin: 0;
   border-top: 1px solid hsl(var(--border));
@@ -562,36 +566,26 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
    the form below it paints. */
 (function () {
   const poster = document.getElementById("poster");
-  const frame  = poster.parentNode;
   const rand   = (a, b) => a + Math.random() * (b - a);
 
-  /* Stars sit in the top 200px only — that is where the gradient is
-     still night sky, before it warms into ember at the bottom. Half
-     the count and a dimmer range than the original poster carried:
-     at full strength the field competes with the moon, and the moon
-     should be the only bright thing up there. */
+  /* Placed in cqw, the same unit the stylesheet uses -- 1% of the
+     poster's width. The artboard is fluid, so there is no pixel size
+     to pin them to, and nothing here needs measuring or re-running on
+     resize. Stars sit in the top 18.5cqw only: that is where the
+     gradient is still night sky, before it warms into ember lower
+     down. Half the count and a dimmer range than the original poster
+     carried -- at full strength the field competes with the moon, and
+     the moon should be the only bright thing up there. */
   for (let i = 0; i < 30; i++) {
     const s = document.createElement("i");
-    const size = rand(1.2, 2.8);
+    const size = rand(0.111, 0.259);
     s.className = "star";
-    s.style.width = s.style.height = size + "px";
-    s.style.left = rand(0, 1080) + "px";
-    s.style.top = rand(0, 200) + "px";
+    s.style.width = s.style.height = size + "cqw";
+    s.style.left = rand(0, 100) + "cqw";
+    s.style.top = rand(0, 18.5) + "cqw";
     s.style.opacity = rand(.18, .7);
     poster.appendChild(s);
   }
-
-  /* The poster is drawn at a fixed 1080x407 and scaled to whatever
-     width it gets. zoom (not transform) so the frame's layout height
-     follows the scale on its own. */
-  const fit = () => { poster.style.zoom = Math.min(frame.clientWidth / 1080, 1); };
-  fit();
-  /* Observing the frame rather than the window: a scrollbar appearing
-     changes the frame's width without firing a window resize, which
-     left the zoom computed against a stale width and the poster
-     overflowing the frame's fixed ratio by a few pixels. */
-  if (window.ResizeObserver) new ResizeObserver(fit).observe(frame);
-  else addEventListener("resize", fit);
 })();
 </script>
 
