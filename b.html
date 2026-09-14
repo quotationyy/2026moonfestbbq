@@ -49,6 +49,29 @@
 
   /* The choice disc's diameter. */
   --disc:                min(9.45rem, 34.2vw, 27vh);
+
+  --wood1:#1A1817; --wood2:#141312; --wood3:#0E0D0D;
+  --paper:#F1EDE2; --paper2:#E4DECF; --ink:#211F1B; --ink2:#6B6355;
+  --gold:#B8944D; --seal:#A8352A;
+  --line:rgba(241,237,226,.26);
+  --ming:"Songti TC","Songti SC","Noto Serif TC","Source Han Serif TC",
+         "SimSun",serif;
+}
+
+/* One board behind the whole page, not just behind the poster: vertical
+   grain over plank seams over a top-lit gradient. Fixed and out of
+   flow, so it covers the window whatever the content does and does not
+   become a flex item of body. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.016) 0 1px, rgba(0,0,0,.030) 1px 3px,
+      rgba(255,255,255,.008) 3px 6px, rgba(0,0,0,.018) 6px 11px),
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,.30) 0 2px, transparent 2px 122px),
+    radial-gradient(120% 55% at 50% 0%, rgba(255,246,228,.05), transparent 64%),
+    linear-gradient(180deg, var(--wood1) 0%, var(--wood2) 42%, var(--wood3) 100%);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -117,24 +140,10 @@ body {
   min-height: 26vh;
   display: flex; flex-direction: column; justify-content: center;
 
-  --wood1:#1A1817; --wood2:#131211; --wood3:#0C0B0B;
-  --paper:#F1EDE2; --paper2:#E4DECF; --ink:#211F1B; --ink2:#6B6355;
-  --gold:#B8944D; --seal:#A8352A;
-  --line:rgba(241,237,226,.26);
-  --ming:"Songti TC","Songti SC","Noto Serif TC","Source Han Serif TC",
-         "SimSun",serif;
-
-  /* Vertical grain over plank divisions over a top-lit gradient. The
-     grain is nearly invisible on its own and entirely the point in
-     aggregate. */
-  background:
-    repeating-linear-gradient(90deg,
-      rgba(255,255,255,.016) 0 1px, rgba(0,0,0,.030) 1px 3px,
-      rgba(255,255,255,.008) 3px 6px, rgba(0,0,0,.018) 6px 11px),
-    repeating-linear-gradient(90deg,
-      rgba(0,0,0,.30) 0 2px, transparent 2px 122px),
-    radial-gradient(120% 80% at 50% 0%, rgba(255,246,228,.055), transparent 62%),
-    linear-gradient(180deg, var(--wood1) 0%, var(--wood2) 58%, var(--wood3) 100%);
+  /* The board itself is on body::before, covering the whole page. All
+     this adds is the light falling on the poster. */
+  background: radial-gradient(90% 120% at 50% 0%,
+    rgba(255,246,228,.045), transparent 70%);
 }
 /* A plain block between the band and the frame, so the frame resolves
    its width against an ordinary block rather than through the flex
@@ -211,16 +220,8 @@ body {
    The page below the poster
    ============================================================ */
 main {
-  /* The same board, continuing under the poster rather than cutting to
-     a different colour at its last pixel -- grain included, at half
-     strength so it does not fight the text. */
-  background:
-    repeating-linear-gradient(90deg,
-      rgba(255,255,255,.008) 0 1px, rgba(0,0,0,.016) 1px 3px,
-      rgba(255,255,255,.004) 3px 6px, rgba(0,0,0,.010) 6px 11px),
-    linear-gradient(180deg,
-      hsl(30 6% 9%) 0,
-      hsl(var(--background)) 30rem);
+  /* No background of its own: the board on body::before runs straight
+     through, so there is no edge here to see. */
   /* No top padding: .facts butts against the poster's bottom edge on
      purpose. That is only safe because .facts carries no top margin --
      a margin on the first thing in here would collapse out through
@@ -485,10 +486,13 @@ button:disabled { opacity: 0.5; cursor: default; }
   /* Fades the page out behind the discs rather than cutting it with a
      hard edge; opaque by the time it reaches the captions so they stay
      legible over whatever is scrolling past. */
+  /* Stops short of opaque on purpose: at full strength it cut a flat
+     rectangle out of the board's grain. --wood3 in rgba, because the
+     token is a hex and this needs an alpha. */
   background: linear-gradient(180deg,
-    hsl(var(--background) / 0) 0,
-    hsl(var(--background) / 0.94) 24%,
-    hsl(var(--background)) 52%);
+    rgba(14,13,13,0) 0,
+    rgba(14,13,13,.80) 26%,
+    rgba(14,13,13,.93) 58%);
   /* The transparent top of the bar must not eat clicks meant for the
      page underneath it. */
   pointer-events: none;
