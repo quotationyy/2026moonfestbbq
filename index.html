@@ -63,15 +63,18 @@ body {
    because the poster and the page below both use .card, .rule and
    .moon for entirely different things.
 
-   Relaid out for the RSVP page: the "肉菜酒玩" card and the badge
-   above the eyebrow are gone, which freed a little over 400px. Almost
-   all of that came off the canvas — 1080x1350 down to 1080x1000 —
-   rather than being absorbed as empty space, because two content
-   masses separated by a void reads as "something was deleted here",
-   and because a shorter hero is the right call on a page whose whole
-   purpose is the two buttons underneath it. The rest went into the
-   info panel, so the date and the cost now carry the bottom half on
-   their own.
+   Quieted down for the RSVP page over several passes. What came out:
+   the "肉菜酒玩" card, the badge above the eyebrow, the three taglines
+   on one line, the title's three stacked drop-shadows and its blurred
+   backplate, the cream info slab, the tick strip, two of the four
+   craters, and half the stars at half the brightness. The canvas came
+   down with all of it (1080x1350 → 1080x820) so the absences read as
+   a shorter poster rather than as holes.
+
+   What stayed: the moon, the warm gradient on the title, and one
+   amber hairline. The details sit in a plain ruled row now instead of
+   on a light panel, which is what lets the moon be the only bright
+   thing up there.
    ============================================================ */
 .poster-frame {
   width: 100%;
@@ -80,23 +83,21 @@ body {
   /* Reserves the correct height before fit() runs, so the page
      below never jumps, and clips the poster if the two ever
      disagree by a pixel. */
-  aspect-ratio: 1080 / 1000;
+  aspect-ratio: 1080 / 820;
   overflow: hidden;
 }
 .poster {
   --bg1:#090A0F; --bg2:#0D0D11; --bg3:#151310; --bg4:#201913;
-  --glow-lo:rgba(205,145,70,.18); --glow-moon:rgba(240,232,210,.09);
+  --glow-lo:rgba(205,145,70,.11); --glow-moon:rgba(240,232,210,.06);
   --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
-  --moon-glow1:rgba(244,234,206,.30); --moon-glow2:rgba(210,195,155,.13);
+  --moon-glow1:rgba(244,234,206,.18); --moon-glow2:rgba(210,195,155,.08);
   --accent:#C9924A; --on-accent:#1B1409;
-  --eyebrow:#C6AE85; --eng-sub:#F2ECDF;
+  --eyebrow:#C6AE85;
   --title-hi:#F6E3BE; --title-lo:#C6823B;
-  --tg1:rgba(215,160,85,.30); --tg2:rgba(198,132,60,.22); --tg3:rgba(185,120,50,.11); --tg4:rgba(200,140,70,.07);
-  --text1:#F3F0E9; --text2:#BAB4A8; --text3:#A49D92;
-  --panel:#EEE6D3; --panel-ink:#211B13; --panel-sub:#5A5142; --panel-lab:#AC7A2E; --panel-line:rgba(130,110,70,.22);
-  --star:#F0EDE3; --tick:rgba(255,245,225,.10);
+  --text1:#F3F0E9; --text3:#A49D92;
+  --star:#F0EDE3; --hair:rgba(246,227,190,.14);
   --latin:"Inter";
-  position:relative;width:1080px;height:1000px;overflow:hidden;
+  position:relative;width:1080px;height:820px;overflow:hidden;
   /* The poster was laid out against the browser default line-height.
      Inheriting the page's 1.6 grows every element that does not set
      its own and pushes the footer past the fixed height, where
@@ -114,55 +115,43 @@ body {
 .poster * { margin:0; padding:0 }
 .poster > *{flex:0 0 auto}
 .poster .star{position:absolute;display:block;background:var(--star);border-radius:50%;z-index:0}
-.poster .moon{position:absolute;top:102px;right:108px;width:216px;height:216px;border-radius:50%;z-index:0;
+.poster .moon{position:absolute;top:96px;right:104px;width:188px;height:188px;border-radius:50%;z-index:0;
   background:radial-gradient(circle at 36% 30%,var(--moon1) 0%,var(--moon2) 58%,var(--moon3) 100%);
-  box-shadow:0 0 55px 16px var(--moon-glow1),0 0 150px 70px var(--moon-glow2)}
-.poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.22)}
-.poster .c1{width:52px;height:52px;left:56%;top:44%}
-.poster .c2{width:26px;height:26px;left:24%;top:22%}
-.poster .c3{width:18px;height:18px;left:74%;top:14%;background:rgba(160,132,84,.16)}
-.poster .c4{width:14px;height:14px;left:38%;top:68%;background:rgba(160,132,84,.16)}
+  box-shadow:0 0 40px 10px var(--moon-glow1),0 0 110px 50px var(--moon-glow2)}
+.poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.16)}
+.poster .c1{width:44px;height:44px;left:56%;top:44%}
+.poster .c2{width:22px;height:22px;left:24%;top:22%}
 
 .poster .z{position:relative;z-index:1}
-.poster .eng-top{color:var(--eyebrow);font-weight:800;font-size:27px;letter-spacing:2px;font-variation-settings:"opsz" 32}
-/* 162px is a hard ceiling, not a taste call: four full-width
-   characters from the 78px gutter end at x=726 and the moon starts at
-   x=756. At 168 the clearance drops to 6px and the moon's glow washes
-   over 肉. */
-.poster .title{position:relative;margin-top:10px;font-weight:900;font-size:162px;letter-spacing:0;line-height:1.04;white-space:nowrap;
-  transform:none;
-  background:linear-gradient(180deg,var(--title-hi) 10%,var(--title-lo) 92%);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:
-    drop-shadow(0 0 10px var(--tg1))
-    drop-shadow(0 0 26px var(--tg2))
-    drop-shadow(0 0 62px var(--tg3))}
-.poster .title::before{content:"";position:absolute;left:-3%;right:2%;top:-6%;bottom:-6%;z-index:-1;pointer-events:none;
-  background:radial-gradient(48% 52% at 44% 52%, var(--tg4), transparent 76%);
-  filter:blur(26px)}
-.poster .eng-sub{margin-top:14px;color:var(--eng-sub);font-weight:800;font-size:44px;letter-spacing:4px;font-variation-settings:"opsz" 32}
-.poster .rule{margin-top:30px;width:240px;height:9px;background:var(--accent);border-radius:6px}
-.poster .slogan{margin-top:26px;color:var(--text2);font-size:32px;letter-spacing:2px}
+.poster .eng-top{color:var(--eyebrow);font-weight:600;font-size:22px;letter-spacing:6px;font-variation-settings:"opsz" 32}
+/* The ceiling is set by the moon, not by taste: four full-width
+   characters from the 78px gutter end at x=638, and the moon's left
+   edge is x=788. Grow this past 177px and the title runs under it. */
+.poster .title{margin-top:18px;font-weight:900;font-size:140px;letter-spacing:0;line-height:1.04;white-space:nowrap;
+  background:linear-gradient(180deg,var(--title-hi) 20%,var(--title-lo) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.poster .eng-sub{margin-top:16px;color:var(--text3);font-weight:600;font-size:23px;letter-spacing:7px;font-variation-settings:"opsz" 32}
+.poster .rule{margin-top:34px;width:180px;height:2px;background:var(--accent)}
 
-/* margin-top:auto pins the panel and the footer to the bottom edge and
-   lets whatever is left over fall as one gap under the slogan. The
-   composition then holds even if a font substitution changes the type
-   block's height, which a stack of fixed margins would not. */
-.poster .info{margin-top:auto;background:var(--panel);border-radius:26px;display:flex;padding:46px 6px}
-.poster .col{flex:1;text-align:center;padding:0 4px}
-.poster .col+.col{border-left:2px solid var(--panel-line)}
-.poster .lab{color:var(--panel-lab);font-weight:900;font-size:27px;letter-spacing:5px}
-.poster .big{color:var(--panel-ink);font-weight:600;font-variation-settings:"opsz" 32;font-size:66px;margin-top:10px;line-height:1.05;white-space:nowrap}
-.poster .sm{color:var(--panel-sub);font-size:25px;margin-top:10px;white-space:nowrap}
+/* margin-top:auto pins the detail row and the footer to the bottom
+   edge and lets whatever is left over fall as one gap under the
+   wordmark. The composition then holds even if a font substitution
+   changes the type block's height, which a stack of fixed margins
+   would not. */
+.poster .info{margin-top:auto;display:flex;padding:38px 0;
+  border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.poster .col{flex:1;padding-left:36px}
+.poster .col:first-child{padding-left:0}
+.poster .col+.col{border-left:1px solid var(--hair)}
+.poster .lab{color:var(--accent);font-weight:600;font-size:21px;letter-spacing:5px}
+.poster .big{color:var(--text1);font-weight:600;font-variation-settings:"opsz" 32;font-size:52px;margin-top:14px;line-height:1.05;white-space:nowrap}
+.poster .sm{color:var(--text3);font-size:22px;margin-top:10px;white-space:nowrap}
 
-.poster .foot{margin-top:56px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
-.poster .foot h4{font-size:41px;font-weight:900;color:var(--text1);letter-spacing:2px}
-.poster .foot p{margin-top:10px;font-size:27px;color:var(--text3);letter-spacing:2px}
-.poster .host{background:var(--accent);color:var(--on-accent);width:37px;height:37px;border-radius:50%;padding:0;align-self:center;display:flex;align-items:center;justify-content:center}
-.poster .host svg{display:block;width:12.3px;height:auto}
-
-.poster .ticks{position:absolute;left:0;right:0;bottom:0;height:24px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px;z-index:0}
-.poster .ticks i{width:2px;background:var(--tick)}
+.poster .foot{margin-top:46px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.poster .foot h4{font-size:29px;font-weight:700;color:var(--text1);letter-spacing:2px}
+.poster .foot p{margin-top:8px;font-size:22px;color:var(--text3);letter-spacing:2px}
+.poster .host{color:var(--accent);opacity:.7;display:flex;align-items:center}
+.poster .host svg{display:block;width:26px;height:auto}
 
 /* ============================================================
    The page below the poster
@@ -173,9 +162,13 @@ main {
   background: linear-gradient(180deg,
     hsl(27 25% 10%) 0,
     hsl(var(--background)) 34rem);
-  padding: 0 0 6rem;
+  /* The top padding is load-bearing: without it the first child's top
+     margin collapses out through main and becomes main's own margin,
+     which opens a strip of bare body background under the poster. */
+  padding: 2.25rem 0 6rem;
 }
 .wrap { max-width: 40rem; margin: 0 auto; padding: 0 1rem; }
+#app > :first-child { margin-top: 0; }
 
 /* ---------- Card ----------
    Scoped to main: the poster has its own .card, and a bare .card
@@ -190,31 +183,26 @@ main .card {
   margin-bottom: 0.875rem;
 }
 
-/* ---------- Event detail list ---------- */
-.details { display: grid; gap: 0.625rem; }
-.details div {
-  display: grid;
-  grid-template-columns: 5.5rem 1fr;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-.details dt {
-  font-size: 0.8125rem; font-weight: 600;
-  color: hsl(var(--muted-foreground));
-  letter-spacing: 0.01em;
-}
-.details dd { margin: 0; font-weight: 500; }
-.details dd .accent { color: hsl(var(--primary)); font-weight: 700; }
+/* ---------- Lede ----------
+   Plain text rather than a card: the poster above already carries the
+   date, the time and the price, so this only has to say why anyone is
+   being asked to press a button. */
+.lede { color: hsl(var(--muted-foreground)); }
+.lede p { margin: 0 0 0.6rem; }
+.lede p:last-child { margin-bottom: 0; }
 
-.prose p { margin: 0 0 0.75rem; }
-.prose p:last-child { margin-bottom: 0; }
-.menu {
-  display: grid; gap: 0.375rem;
-  margin: 0.875rem 0 0; padding: 0.875rem 0 0;
+/* ---------- Footnotes under the choices ---------- */
+.notes {
+  margin-top: 2.5rem; padding-top: 1.25rem;
   border-top: 1px solid hsl(var(--border));
-  list-style: none;
+  display: grid; gap: 0.625rem;
+  font-size: 0.8125rem; color: hsl(var(--muted-foreground));
 }
-.menu li { font-size: 0.875rem; }
+.notes p { margin: 0; }
+.notes strong {
+  color: hsl(var(--foreground));
+  font-weight: 600; margin-inline-end: 0.6rem;
+}
 
 /* ---------- Section heading ---------- */
 .section { margin: 2rem 0 0.875rem; }
@@ -265,38 +253,6 @@ input:focus-visible, textarea:focus-visible {
   border-color: hsl(var(--destructive));
 }
 
-/* ---------- Radio group ---------- */
-.radios { display: grid; gap: 0.125rem; }
-.radio {
-  display: flex; align-items: center; gap: 0.625rem;
-  padding: 0.625rem 0.75rem; margin: 0 -0.75rem;
-  border-radius: calc(var(--radius) - 0.3rem);
-  cursor: pointer;
-  transition: background .12s;
-}
-.radio:hover { background: hsl(var(--muted) / 0.7); }
-.radio span { font-size: 0.9375rem; }
-input[type=radio] {
-  appearance: none; -webkit-appearance: none;
-  flex: none; margin: 0;
-  width: 1rem; height: 1rem;
-  border: 1px solid hsl(var(--primary));
-  border-radius: 50%;
-  display: grid; place-content: center;
-  cursor: pointer;
-  transition: box-shadow .12s;
-}
-input[type=radio]::after {
-  content: ""; width: 0.5rem; height: 0.5rem;
-  border-radius: 50%;
-  background: hsl(var(--primary));
-  transform: scale(0);
-  transition: transform .12s ease-out;
-}
-input[type=radio]:checked::after { transform: scale(1); }
-input[type=radio]:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3); }
-.field.invalid input[type=radio] { border-color: hsl(var(--destructive)); }
-
 /* ---------- Error text ---------- */
 .err {
   font-size: 0.8125rem; font-weight: 500;
@@ -304,24 +260,6 @@ input[type=radio]:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(-
   display: none;
 }
 .field.invalid .err { display: block; }
-
-/* ---------- Notice / policy ---------- */
-.notice {
-  border-left: 2px solid hsl(var(--primary));
-  background: hsl(var(--muted) / 0.6);
-  border-radius: calc(var(--radius) - 0.35rem);
-  padding: 0.875rem 1rem;
-  font-size: 0.875rem;
-  display: grid; gap: 0.5rem;
-}
-.notice strong { font-weight: 700; }
-.todo {
-  border-left-color: hsl(var(--destructive));
-  background: hsl(var(--destructive) / 0.1);
-}
-.policy { display: grid; gap: 0.75rem; font-size: 0.8125rem;
-          color: hsl(var(--muted-foreground)); }
-.policy strong { color: hsl(var(--foreground)); }
 
 /* ---------- Button ---------- */
 .actions { margin-top: 1.5rem; display: grid; gap: 0.75rem; }
@@ -338,7 +276,6 @@ button {
 button:hover:not(:disabled) { opacity: 0.9; }
 button:focus-visible { outline: none; box-shadow: 0 0 0 3px hsl(var(--ring) / 0.4); }
 button:disabled { opacity: 0.5; cursor: default; }
-.legend { font-size: 0.8125rem; color: hsl(var(--muted-foreground)); }
 .status { font-size: 0.875rem; color: hsl(var(--muted-foreground)); min-height: 1.25rem; }
 .status.bad { color: hsl(var(--destructive)); font-weight: 500; }
 
@@ -432,30 +369,27 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 
 <header class="poster-frame">
 <div class="poster" id="poster">
-  <div class="moon"><div class="crater c1"></div><div class="crater c2"></div><div class="crater c3"></div><div class="crater c4"></div></div>
+  <div class="moon"><div class="crater c1"></div><div class="crater c2"></div></div>
 
   <div class="eng-top z">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</div>
   <h1 class="title z">中秋烤肉</h1>
   <div class="eng-sub z">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON<span style="letter-spacing:0">.</span></div>
   <div class="rule z"></div>
-  <div class="slogan z">烤好烤滿 ・ 吃到走不動 ・ 喝到看不清月亮</div>
 
   <div class="info z">
     <div class="col"><div class="lab">日期</div><div class="big">9/26</div><div class="sm">（六）中秋連假</div></div>
     <div class="col"><div class="lab">時間</div><div class="big">17:30</div><div class="sm">– 23:00</div></div>
-    <div class="col"><div class="lab">均攤</div><div class="big">$1500</div><div class="sm">場地我出</div></div>
-    <div class="col"><div class="lab">人數</div><div class="big">30</div><div class="sm">報名已截止</div></div>
+    <div class="col"><div class="lab">均攤</div><div class="big">$1,500</div><div class="sm">場地我出</div></div>
   </div>
 
   <div class="foot z">
     <div>
-      <h4>北投奇岩站步行可到</h4>
-      <p>來不來，下面說一聲</p>
+      <h4>北投・奇岩站・豐禾公寓大廈</h4>
+      <p>捷運站步行可到</p>
     </div>
     <div class="host"><svg viewBox="0 0 105 75" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="brand mark"><path d="M7.5 75H30L45 45V0H0V45H22.5L7.5 75ZM67.5 75H90L105 45V0H60V45H82.5L67.5 75Z" fill="currentColor"/></svg></div>
   </div>
 
-  <div class="ticks" id="ticks"></div>
 </div>
 </header>
 
@@ -468,35 +402,33 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   const frame  = poster.parentNode;
   const rand   = (a, b) => a + Math.random() * (b - a);
 
-  /* Stars sit in the top 530px only — that is where the gradient is
-     still night sky, before it warms into ember at the bottom. The
-     bound and the count are both tied to the canvas height: on the
-     old 1350px poster they were 720 and 130, which is the same share
-     of sky at the same density. */
-  for (let i = 0; i < 100; i++) {
+  /* Stars sit in the top 410px only — that is where the gradient is
+     still night sky, before it warms into ember at the bottom. Half
+     the count and a dimmer range than the original poster carried:
+     at full strength the field competes with the moon, and the moon
+     should be the only bright thing up there. */
+  for (let i = 0; i < 45; i++) {
     const s = document.createElement("i");
-    const size = rand(1.4, 3.4);
+    const size = rand(1.2, 2.8);
     s.className = "star";
     s.style.width = s.style.height = size + "px";
     s.style.left = rand(0, 1080) + "px";
-    s.style.top = rand(0, 530) + "px";
-    s.style.opacity = rand(.25, .95);
+    s.style.top = rand(0, 410) + "px";
+    s.style.opacity = rand(.18, .7);
     poster.appendChild(s);
   }
 
-  const ticks = document.getElementById("ticks");
-  for (let j = 0; j < 56; j++) {
-    const b = document.createElement("i");
-    b.style.height = (j % 4 === 0 ? 20 : 12) + "px";
-    ticks.appendChild(b);
-  }
-
-  /* The poster is drawn at a fixed 1080x1000 and scaled to whatever
+  /* The poster is drawn at a fixed 1080x820 and scaled to whatever
      width it gets. zoom (not transform) so the frame's layout height
      follows the scale on its own. */
   const fit = () => { poster.style.zoom = Math.min(frame.clientWidth / 1080, 1); };
   fit();
-  addEventListener("resize", fit);
+  /* Observing the frame rather than the window: a scrollbar appearing
+     changes the frame's width without firing a window resize, which
+     left the zoom computed against a stale width and the poster
+     overflowing the frame's fixed ratio by a few pixels. */
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(frame);
+  else addEventListener("resize", fit);
 })();
 </script>
 
@@ -513,25 +445,19 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp-tErARlbGJ30wrcv4yZpr_0lbvy4uhRp2IzFeYQjfJq9HI2Tvf3tMaK1wBF8R2lk/exec";
 
 /* ============================================================
-   2. 活動資訊與頁面文字。要改內容改這裡就好。
+   2. 頁面文字。要改內容改這裡就好。
 
-      海報已經把大標、賣點和日期說完了，所以這裡只留「決定要不
-      要來」時會想再看一眼的硬資訊。
+      日期、時間、費用、地點都在海報上了，這裡不重複，只說「為什
+      麼要按這顆按鈕」。
    ============================================================ */
 const EVENT = {
-  details: [
-    ["地點", "北投・奇岩站・豐禾公寓大廈"],
-    ["日期", "9/26（六）中秋連假"],
-    ["時間", "17:30–23:00"],
-    ["費用", "$1,500／人（餐點＋酒水）", true]
-  ],
-  intro: [
-    "開烤前要抓最後的備料量，麻煩點一下按鈕讓我知道你到底來不來。",
-    "臨時有事不能來也沒關係，選「無法出席」我就把費用退給你。"
+  lede: [
+    "9/26 就要到了，備料前想再跟你確認一次。",
+    "臨時來不了也不要緊，選「無法出席」，費用如數退還。"
   ],
   notes: [
-    ["改變主意了？", "再回到這頁重點一次就好，我看你最後一次的回覆。"],
-    ["退款怎麼給？", "我會私訊跟你確認匯款方式，不用在這裡填帳號。"]
+    ["改變主意", "再回這頁點一次就好，以最後一次回覆為準。"],
+    ["退款方式", "我會私訊與你確認，這裡不必填帳號。"]
   ]
 };
 
@@ -540,15 +466,15 @@ const EVENT = {
 const CHOICES = {
   attending: {
     text:    "會出席",
-    button:  ["我會出席", "人來就好，其他都準備好了"],
+    button:  ["我會出席", "人到就好，其餘都備妥了"],
     confirm: "確定會出席",
-    done:    ["回覆完成", "9/26 見，記得餓著肚子來 🔥"]
+    done:    ["回覆完成", "9/26 見。"]
   },
   refund: {
     text:    "無法出席，請退款",
-    button:  ["無法出席", "費用會退回去給你"],
+    button:  ["無法出席", "費用如數退還"],
     confirm: "確定無法出席，退款",
-    done:    ["已收到回覆", "這次沒能一起烤，下次再約。退款我會私訊你。"]
+    done:    ["已收到回覆", "這回沒能一起，下次再約。退款我會私訊你。"]
   }
 };
 
@@ -562,8 +488,6 @@ const MSG = {
   back:     "選錯了，重選",
   again:    "改回覆",
   sending:  "送出中…",
-  info:     "活動資訊",
-  notesH:   "幾件事",
   failed:   e => `送不出去：${e} 請再試一次。`,
   stale:    "後端還沒更新，你的回覆沒有被記錄。請通知主辦人重新部署 Apps Script。"
 };
@@ -587,24 +511,6 @@ const remembered = {
    That single value is the whole state machine: choose -> confirm. */
 let choice = null;
 
-const infoCard = () => `
-  <div class="section"><h2>${esc(MSG.info)}</h2><div class="rule"></div></div>
-  <div class="card">
-    <dl class="details">
-      ${EVENT.details.map(([k, v, hot]) => `<div>
-        <dt>${esc(k)}</dt>
-        <dd>${hot ? `<span class="accent">${esc(v)}</span>` : esc(v)}</dd>
-      </div>`).join("")}
-    </dl>
-  </div>`;
-
-const notesCard = () => `
-  <div class="section"><h2>${esc(MSG.notesH)}</h2><div class="rule"></div></div>
-  <div class="card"><div class="policy">
-    ${EVENT.notes.map(([h, t]) =>
-      `<div><strong>${esc(h)}</strong><br>${esc(t)}</div>`).join("")}
-  </div></div>`;
-
 function chooseView() {
   const btn = (id) => {
     const c = CHOICES[id];
@@ -615,19 +521,18 @@ function chooseView() {
     </button>`;
   };
   return `
-    ${infoCard()}
-    <div class="card prose">
-      ${EVENT.intro.map(p => `<p>${esc(p)}</p>`).join("")}
-    </div>
+    <div class="lede">${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}</div>
     <div class="section"><h2>${esc(MSG.ask)}</h2><div class="rule"></div></div>
     <div class="choices">${Object.keys(CHOICES).map(btn).join("")}</div>
-    ${notesCard()}`;
+    <div class="notes">
+      ${EVENT.notes.map(([h, t]) =>
+        `<p><strong>${esc(h)}</strong>${esc(t)}</p>`).join("")}
+    </div>`;
 }
 
 function confirmView() {
   const c = CHOICES[choice];
   return `
-    ${infoCard()}
     <div class="section"><h2>${esc(MSG.nameH)}</h2><div class="rule"></div></div>
     <div class="card">
       <div class="chosen" data-status="${esc(choice)}">
