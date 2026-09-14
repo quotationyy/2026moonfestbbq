@@ -59,18 +59,28 @@ body {
 }
 
 /* ============================================================
-   Poster — palette-C-amber, design untouched. Every rule is
-   scoped under .poster because the poster and the form both use
-   .card, .rule and .moon for entirely different things.
+   Poster — palette-C-amber. Every rule is scoped under .poster
+   because the poster and the page below both use .card, .rule and
+   .moon for entirely different things.
+
+   Relaid out for the RSVP page: the "肉菜酒玩" card and the badge
+   above the eyebrow are gone, which freed a little over 400px. Almost
+   all of that came off the canvas — 1080x1350 down to 1080x1000 —
+   rather than being absorbed as empty space, because two content
+   masses separated by a void reads as "something was deleted here",
+   and because a shorter hero is the right call on a page whose whole
+   purpose is the two buttons underneath it. The rest went into the
+   info panel, so the date and the cost now carry the bottom half on
+   their own.
    ============================================================ */
 .poster-frame {
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  /* Reserves the correct height before fit() runs, so the form
+  /* Reserves the correct height before fit() runs, so the page
      below never jumps, and clips the poster if the two ever
      disagree by a pixel. */
-  aspect-ratio: 1080 / 1350;
+  aspect-ratio: 1080 / 1000;
   overflow: hidden;
 }
 .poster {
@@ -79,19 +89,17 @@ body {
   --moon1:#FAF4E4; --moon2:#EEE4CB; --moon3:#DFD3B4;
   --moon-glow1:rgba(244,234,206,.30); --moon-glow2:rgba(210,195,155,.13);
   --accent:#C9924A; --on-accent:#1B1409;
-  --chip-bg:#C9924A; --chip-ink:#1E1608;
   --eyebrow:#C6AE85; --eng-sub:#F2ECDF;
   --title-hi:#F6E3BE; --title-lo:#C6823B;
   --tg1:rgba(215,160,85,.30); --tg2:rgba(198,132,60,.22); --tg3:rgba(185,120,50,.11); --tg4:rgba(200,140,70,.07);
   --text1:#F3F0E9; --text2:#BAB4A8; --text3:#A49D92;
-  --card-bg:rgba(36,34,33,.58); --card-line:rgba(255,245,225,.07);
   --panel:#EEE6D3; --panel-ink:#211B13; --panel-sub:#5A5142; --panel-lab:#AC7A2E; --panel-line:rgba(130,110,70,.22);
   --star:#F0EDE3; --tick:rgba(255,245,225,.10);
   --latin:"Inter";
-  position:relative;width:1080px;height:1350px;overflow:hidden;
+  position:relative;width:1080px;height:1000px;overflow:hidden;
   /* The poster was laid out against the browser default line-height.
-     Inheriting the form's 1.6 grows every element that does not set
-     its own and pushes the footer past the fixed 1350px, where
+     Inheriting the page's 1.6 grows every element that does not set
+     its own and pushes the footer past the fixed height, where
      overflow:hidden silently eats it. */
   line-height:normal;
   font-family:var(--latin),"GSK","GenSekiGothic2 TW","Noto Sans TC",sans-serif;
@@ -116,9 +124,12 @@ body {
 .poster .c4{width:14px;height:14px;left:38%;top:68%;background:rgba(160,132,84,.16)}
 
 .poster .z{position:relative;z-index:1}
-.poster .badge{align-self:flex-start;background:var(--accent);color:var(--on-accent);font-weight:900;font-size:28px;letter-spacing:3px;padding:10px 32px;border-radius:999px}
-.poster .eng-top{margin-top:20px;color:var(--eyebrow);font-weight:800;font-size:26px;letter-spacing:1px;font-variation-settings:"opsz" 32}
-.poster .title{position:relative;margin-top:8px;font-weight:900;font-size:162px;letter-spacing:0;line-height:1.04;white-space:nowrap;
+.poster .eng-top{color:var(--eyebrow);font-weight:800;font-size:27px;letter-spacing:2px;font-variation-settings:"opsz" 32}
+/* 162px is a hard ceiling, not a taste call: four full-width
+   characters from the 78px gutter end at x=726 and the moon starts at
+   x=756. At 168 the clearance drops to 6px and the moon's glow washes
+   over 肉. */
+.poster .title{position:relative;margin-top:10px;font-weight:900;font-size:162px;letter-spacing:0;line-height:1.04;white-space:nowrap;
   transform:none;
   background:linear-gradient(180deg,var(--title-hi) 10%,var(--title-lo) 92%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
@@ -129,27 +140,24 @@ body {
 .poster .title::before{content:"";position:absolute;left:-3%;right:2%;top:-6%;bottom:-6%;z-index:-1;pointer-events:none;
   background:radial-gradient(48% 52% at 44% 52%, var(--tg4), transparent 76%);
   filter:blur(26px)}
-.poster .eng-sub{margin-top:8px;color:var(--eng-sub);font-weight:800;font-size:42px;letter-spacing:4px;font-variation-settings:"opsz" 32}
-.poster .rule{margin-top:20px;width:231px;height:8px;background:var(--accent);border-radius:6px}
-.poster .slogan{margin-top:22px;color:var(--text2);font-size:30px;letter-spacing:2px}
+.poster .eng-sub{margin-top:14px;color:var(--eng-sub);font-weight:800;font-size:44px;letter-spacing:4px;font-variation-settings:"opsz" 32}
+.poster .rule{margin-top:30px;width:240px;height:9px;background:var(--accent);border-radius:6px}
+.poster .slogan{margin-top:26px;color:var(--text2);font-size:32px;letter-spacing:2px}
 
-.poster .card{margin-top:30px;border-radius:30px;background:var(--card-bg);border:1px solid var(--card-line);padding:28px 44px}
-.poster .row{display:flex;align-items:flex-start;gap:26px}
-.poster .row+.row{margin-top:12px}
-.poster .chip{flex:0 0 auto;width:58px;height:58px;border-radius:50%;background:var(--chip-bg);display:flex;align-items:center;justify-content:center;color:var(--chip-ink);font-weight:900;font-size:30px}
-.poster .row h3{font-size:34px;font-weight:900;color:var(--text1);line-height:1.2;letter-spacing:1px}
-.poster .row p{margin-top:5px;font-size:24px;color:var(--text3);letter-spacing:1px;line-height:1.25}
-
-.poster .info{margin-top:24px;background:var(--panel);border-radius:26px;display:flex;padding:26px 6px}
+/* margin-top:auto pins the panel and the footer to the bottom edge and
+   lets whatever is left over fall as one gap under the slogan. The
+   composition then holds even if a font substitution changes the type
+   block's height, which a stack of fixed margins would not. */
+.poster .info{margin-top:auto;background:var(--panel);border-radius:26px;display:flex;padding:46px 6px}
 .poster .col{flex:1;text-align:center;padding:0 4px}
 .poster .col+.col{border-left:2px solid var(--panel-line)}
-.poster .lab{color:var(--panel-lab);font-weight:900;font-size:26px;letter-spacing:5px}
-.poster .big{color:var(--panel-ink);font-weight:600;font-variation-settings:"opsz" 32;font-size:55px;margin-top:8px;line-height:1.05;white-space:nowrap}
-.poster .sm{color:var(--panel-sub);font-size:23px;margin-top:9px;white-space:nowrap}
+.poster .lab{color:var(--panel-lab);font-weight:900;font-size:27px;letter-spacing:5px}
+.poster .big{color:var(--panel-ink);font-weight:600;font-variation-settings:"opsz" 32;font-size:66px;margin-top:10px;line-height:1.05;white-space:nowrap}
+.poster .sm{color:var(--panel-sub);font-size:25px;margin-top:10px;white-space:nowrap}
 
-.poster .foot{margin-top:44px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
-.poster .foot h4{font-size:39px;font-weight:900;color:var(--text1);letter-spacing:2px}
-.poster .foot p{margin-top:9px;font-size:26px;color:var(--text3);letter-spacing:2px}
+.poster .foot{margin-top:56px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.poster .foot h4{font-size:41px;font-weight:900;color:var(--text1);letter-spacing:2px}
+.poster .foot p{margin-top:10px;font-size:27px;color:var(--text3);letter-spacing:2px}
 .poster .host{background:var(--accent);color:var(--on-accent);width:37px;height:37px;border-radius:50%;padding:0;align-self:center;display:flex;align-items:center;justify-content:center}
 .poster .host svg{display:block;width:12.3px;height:auto}
 
@@ -426,31 +434,23 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 <div class="poster" id="poster">
   <div class="moon"><div class="crater c1"></div><div class="crater c2"></div><div class="crater c3"></div><div class="crater c4"></div></div>
 
-  <div class="badge z">不只賞月，更要嚐肉</div>
   <div class="eng-top z">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</div>
   <h1 class="title z">中秋烤肉</h1>
   <div class="eng-sub z">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON<span style="letter-spacing:0">.</span></div>
   <div class="rule z"></div>
   <div class="slogan z">烤好烤滿 ・ 吃到走不動 ・ 喝到看不清月亮</div>
 
-  <div class="card z">
-    <div class="row"><div class="chip">肉</div><div><h3>烤肉怎麼可能沒有肉</h3><p>牛胸肉・牛小排・雞串・豬肉・海鮮</p></div></div>
-    <div class="row"><div class="chip">菜</div><div><h3>蔬食、配菜也有</h3><p>生菜、熱菜都有</p></div></div>
-    <div class="row"><div class="chip">酒</div><div><h3>喝一杯就聊開了</h3><p>紅酒・啤酒・無酒精飲料</p></div></div>
-    <div class="row"><div class="chip">玩</div><div><h3>認識幾個不一樣的人</h3><p>音樂・亂聊・認識新朋友・賞月</p></div></div>
-  </div>
-
   <div class="info z">
     <div class="col"><div class="lab">日期</div><div class="big">9/26</div><div class="sm">（六）中秋連假</div></div>
     <div class="col"><div class="lab">時間</div><div class="big">17:30</div><div class="sm">– 23:00</div></div>
     <div class="col"><div class="lab">均攤</div><div class="big">$1500</div><div class="sm">場地我出</div></div>
-    <div class="col"><div class="lab">人數</div><div class="big">30</div><div class="sm">報名到 8/31</div></div>
+    <div class="col"><div class="lab">人數</div><div class="big">30</div><div class="sm">報名已截止</div></div>
   </div>
 
   <div class="foot z">
     <div>
       <h4>北投奇岩站步行可到</h4>
-      <p>請填表單+1</p>
+      <p>來不來，下面說一聲</p>
     </div>
     <div class="host"><svg viewBox="0 0 105 75" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="brand mark"><path d="M7.5 75H30L45 45V0H0V45H22.5L7.5 75ZM67.5 75H90L105 45V0H60V45H82.5L67.5 75Z" fill="currentColor"/></svg></div>
   </div>
@@ -468,15 +468,18 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   const frame  = poster.parentNode;
   const rand   = (a, b) => a + Math.random() * (b - a);
 
-  /* Stars sit in the top 720px only — that is where the gradient is
-     still night sky, before it warms into ember at the bottom. */
-  for (let i = 0; i < 130; i++) {
+  /* Stars sit in the top 530px only — that is where the gradient is
+     still night sky, before it warms into ember at the bottom. The
+     bound and the count are both tied to the canvas height: on the
+     old 1350px poster they were 720 and 130, which is the same share
+     of sky at the same density. */
+  for (let i = 0; i < 100; i++) {
     const s = document.createElement("i");
     const size = rand(1.4, 3.4);
     s.className = "star";
     s.style.width = s.style.height = size + "px";
     s.style.left = rand(0, 1080) + "px";
-    s.style.top = rand(0, 720) + "px";
+    s.style.top = rand(0, 530) + "px";
     s.style.opacity = rand(.25, .95);
     poster.appendChild(s);
   }
@@ -488,7 +491,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
     ticks.appendChild(b);
   }
 
-  /* The poster is drawn at a fixed 1080x1350 and scaled to whatever
+  /* The poster is drawn at a fixed 1080x1000 and scaled to whatever
      width it gets. zoom (not transform) so the frame's layout height
      follows the scale on its own. */
   const fit = () => { poster.style.zoom = Math.min(frame.clientWidth / 1080, 1); };
@@ -745,8 +748,8 @@ function done(name) {
     render();
   });
 
-  /* Scroll to the confirmation, not to the top — the poster is
-     1350px tall and would bury the message off-screen. */
+  /* Scroll to the confirmation, not to the top — the poster is a
+     full screen tall and would bury the message off-screen. */
   document.querySelector("main").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
