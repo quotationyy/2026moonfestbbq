@@ -40,7 +40,7 @@
      bottom padding has to clear the floating bar, and that clearance
      is only correct if it tracks this. The 30vh arm keeps the bar off
      most of a landscape phone. */
-  --disc:                min(10.5rem, 38vw, 30vh);
+  --disc:                min(9.45rem, 34.2vw, 27vh);
 
   /* The poster's hairline, reused on every card so the whole page
      shares one edge treatment. */
@@ -125,12 +125,12 @@ body {
 .poster * { margin:0; padding:0 }
 .poster > *{flex:0 0 auto}
 .poster .star{position:absolute;display:block;background:var(--star);border-radius:50%;z-index:0}
-.poster .moon{position:absolute;top:96px;right:104px;width:188px;height:188px;border-radius:50%;z-index:0;
+.poster .moon{position:absolute;top:96px;right:100px;width:220px;height:220px;border-radius:50%;z-index:0;
   background:radial-gradient(circle at 36% 30%,var(--moon1) 0%,var(--moon2) 58%,var(--moon3) 100%);
   box-shadow:0 0 40px 10px var(--moon-glow1),0 0 110px 50px var(--moon-glow2)}
 .poster .crater{position:absolute;border-radius:50%;background:rgba(160,132,84,.16)}
-.poster .c1{width:44px;height:44px;left:56%;top:44%}
-.poster .c2{width:22px;height:22px;left:24%;top:22%}
+.poster .c1{width:51px;height:51px;left:56%;top:44%}
+.poster .c2{width:26px;height:26px;left:24%;top:22%}
 
 .poster .z{position:relative;z-index:1}
 .poster .eng-top{color:var(--eyebrow);font-weight:600;font-size:22px;letter-spacing:6px;font-variation-settings:"opsz" 32}
@@ -372,7 +372,7 @@ button:disabled { opacity: 0.5; cursor: default; }
   font-size: 1.0625rem; font-weight: 800; letter-spacing: 0.06em;
 }
 .cap {
-  font-size: 0.75rem; line-height: 1.5; text-align: center;
+  font-size: 0.6875rem; line-height: 1.5; text-align: center;
   color: hsl(var(--muted-foreground));
 }
 
