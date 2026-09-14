@@ -308,6 +308,8 @@ main .card {
    being asked to press a button. */
 .lede { color: hsl(var(--muted-foreground)); }
 .lede p { margin: 0 0 0.6rem; text-wrap: pretty; }
+/* The page's actual question, lifted out of the grey it was sitting in. */
+.lede .hl { color: hsl(var(--primary)); font-weight: 700; }
 .lede p:last-child { margin-bottom: 0; }
 /* The only sentence in this block with a consequence attached, so it
    does not sit in the same grey as the two above it. */
@@ -621,7 +623,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp-tErARlbGJ30wrcv4
    ============================================================ */
 const EVENT = {
   lede: [
-    "9/26 快到了，為了不浪費食材，想再跟你確認一次：你會來嗎？",
+    "9/26 快到了，為了不浪費食材，想再跟你確認一次：**你會來嗎？**",
     "臨時來不了也沒關係，選「無法出席」就好，費用會全額退給你。"
   ],
   /* 有後果的那一句，單獨拉出來是為了讓它不跟上面兩行同一個灰。 */
@@ -678,6 +680,10 @@ const app = document.getElementById("app");
 const esc = s => String(s).replace(/[&<>"']/g,
   c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 
+/* 開場白裡用 **這樣** 標重點。先 esc 再換標記，所以送進來的內容
+   仍然是逃逸過的——標記本身是我們寫死的，不是使用者輸入。 */
+const mark = t => esc(t).replace(/\*\*(.+?)\*\*/g, '<b class="hl">$1</b>');
+
 /* Storage throws outright on an opaque origin (opening this file
    straight off disk, for one), and a remembered name is not worth a
    dead page — so every access is wrapped. */
@@ -701,7 +707,7 @@ function chooseView() {
   };
   return `
     <div class="lede">
-      ${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}
+      ${EVENT.lede.map(p => `<p>${mark(p)}</p>`).join("")}
       <p class="deadline">${esc(EVENT.deadline)}</p>
     </div>
     <div class="notes">
