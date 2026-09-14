@@ -143,9 +143,9 @@ function handleSubmit_(payload) {
  * Append-only on purpose. Someone who changes their mind adds a second
  * row instead of overwriting the first, so the sheet keeps the whole
  * history and the last row for a name is the answer that counts. The
- * page tells people they may re-answer, so a repeat is expected rather
- * than an error, and two people who genuinely share a name still each
- * get a row.
+ * confirmation screen offers a way back to the choices, so a repeat is
+ * expected rather than an error, and two people who genuinely share a
+ * name still each get a row.
  *
  * `status` is one of RSVP_STATUSES -- a stable key to sort and count
  * on. `status_text` is whatever the page displayed for that choice, so
