@@ -1,11 +1,16 @@
 /**
  * Survey backend -- Google Apps Script Web App.
  *
- * Three actions, all over POST:
+ * Four actions, all over POST:
  *
  *   (no action) / "submit"  append one response row  -- public
+ *   "rsvp"                  append one attendance answer -- public
  *   "read"                  return every response    -- password required
  *   "delete"                archive one response     -- password required
+ *
+ * "rsvp" is a separate, later addition: it writes to its own sheet and
+ * never touches the signup rows, so the two pages cannot corrupt each
+ * other's data.
  *
  * The admin password is NOT in this file. This file lives in a public
  * GitHub repository, so anything written here is world-readable. The
@@ -19,6 +24,16 @@ var SHEET_NAME   = 'Responses';
 var TRASH_NAME   = 'Deleted';      // deleted rows are moved here, not destroyed
 var PW_PROPERTY  = 'ADMIN_PASSWORD';
 
+// Attendance answers from index.html land here. The spreadsheet is
+// named by id rather than reached through getActiveSpreadsheet(), so
+// the destination is readable in this file instead of being an
+// invisible property of whichever document the project is bound to.
+var RSVP_SHEET_NAME     = 'RSVP';
+var RSVP_SPREADSHEET_ID = '1xIM8gOzfQ7zktQ8aZqJ5BhJKD5xeiTQhgGq9ZGnnd50';
+var RSVP_HEADERS  = ['timestamp', 'name', 'status', 'status_text',
+                     'submitted_at', 'source_page'];
+var RSVP_STATUSES = ['attending', 'refund'];
+
 // Brute-force limits. A wrong password always costs the caller FAIL_DELAY_MS,
 // and after MAX_FAILS wrong tries the read action is refused for
 // LOCKOUT_MINUTES regardless of what is sent.
@@ -28,7 +43,8 @@ var LOCKOUT_MINUTES = 15;
 
 /** Visiting the /exec URL in a browser hits this -- a quick "is it live?" check. */
 function doGet() {
-  return json_({ ok: true, service: 'survey', sheet: SHEET_NAME });
+  return json_({ ok: true, service: 'survey', sheet: SHEET_NAME,
+    actions: ['submit', 'rsvp', 'read', 'delete'] });
 }
 
 function doPost(e) {
@@ -46,6 +62,8 @@ function doPost(e) {
     }
     var payload = JSON.parse(e.postData.contents);
     var action = payload.action;
+
+    if (action === 'rsvp') return handleRsvp_(payload);
 
     if (action === 'read' || action === 'delete') {
       var refusal = authorize_(payload);
@@ -113,6 +131,71 @@ function handleSubmit_(payload) {
 
   sheet.appendRow(row);
   return json_({ ok: true, row: sheet.getLastRow() });
+}
+
+/* ------------------------------------------------------------------ */
+/* Public: record one attendance answer                                */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Append one RSVP row.
+ *
+ * Append-only on purpose. Someone who changes their mind adds a second
+ * row instead of overwriting the first, so the sheet keeps the whole
+ * history and the last row for a name is the answer that counts. The
+ * page tells people they may re-answer, so a repeat is expected rather
+ * than an error, and two people who genuinely share a name still each
+ * get a row.
+ *
+ * `status` is one of RSVP_STATUSES -- a stable key to sort and count
+ * on. `status_text` is whatever the page displayed for that choice, so
+ * the sheet reads without a lookup table. Letting the client supply
+ * that wording is deliberate: this file has to survive being pasted
+ * through a browser into the Apps Script editor, and non-ASCII has been
+ * mangled on that path before. Keep this file ASCII.
+ */
+function handleRsvp_(payload) {
+  // Honeypot, same contract as handleSubmit_: answer ok, store nothing.
+  if (payload._hp) return json_({ ok: true });
+
+  var name   = String(payload.name || '').trim();
+  var status = String(payload.status || '');
+  var meta   = payload.meta || {};
+
+  if (!name) {
+    return json_({ ok: false, code: 'no_name', error: 'A name is required.' });
+  }
+  if (RSVP_STATUSES.indexOf(status) === -1) {
+    return json_({ ok: false, code: 'bad_status',
+      error: 'status must be one of: ' + RSVP_STATUSES.join(', ') });
+  }
+
+  var sheet = getRsvpSheet_();
+  sheet.appendRow([
+    new Date(),
+    name,
+    status,
+    String(payload.statusText || status),
+    meta.submittedAt || '',
+    meta.page || ''
+  ]);
+
+  return json_({ ok: true, row: sheet.getLastRow() });
+}
+
+/** The RSVP sheet, created with its header row on first use. */
+function getRsvpSheet_() {
+  var ss = SpreadsheetApp.openById(RSVP_SPREADSHEET_ID);
+  var sheet = ss.getSheetByName(RSVP_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(RSVP_SHEET_NAME);
+  }
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, RSVP_HEADERS.length).setValues([RSVP_HEADERS]);
+    sheet.getRange(1, 1, 1, RSVP_HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 /* ------------------------------------------------------------------ */

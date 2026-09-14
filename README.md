@@ -1,7 +1,7 @@
-# Survey form — GitHub Pages + Google Sheets
+# 2026 Mid-Autumn BBQ — GitHub Pages + Google Sheets
 
-A single-page survey form that posts answers straight into a Google Sheet.
-No server, no database, no monthly cost.
+Static pages that post straight into a Google Sheet. No server, no database,
+no monthly cost.
 
 ```
 visitor's browser  ──POST JSON──▶  Apps Script Web App  ──appends row──▶  Google Sheet
@@ -10,9 +10,16 @@ visitor's browser  ──POST JSON──▶  Apps Script Web App  ──appends 
 
 | Piece | What it does | Cost |
 |---|---|---|
-| `index.html` | The form. Static file — host anywhere. | free |
-| `Code.gs` | Your API endpoint. Runs inside Google. | free |
+| `index.html` | RSVP page — two buttons, a name, done. Appends to the `RSVP` sheet. | free |
+| `signup.html` | The original 11-question signup form. Appends to `Responses`. | free |
+| `admin.html` | Password-gated dashboard over `Responses`. | free |
+| `Code.gs` | The API endpoint. Runs inside Google. | free |
 | Google Sheet | The database, plus charts and CSV export for free. | free |
+
+`index.html` was the signup form until signups closed. It is now the
+attendance-confirmation page, and the form moved to `signup.html` untouched —
+so the link already sent out keeps working and now asks the question that
+matters at this point in the run-up.
 
 Why Apps Script rather than a Sheets API key: an API key in a public HTML file
 is readable by anyone, and would let strangers write to your Sheet. The Web App
@@ -40,19 +47,27 @@ runs *as you* on Google's side, so nothing secret ever ships to the browser.
 5. Copy the **Web app URL**. It ends in `/exec`.
 
 Verify it: paste that URL into a browser tab. You should see
-`{"ok":true,"service":"survey","sheet":"Responses"}`.
 
-### 3. Point the form at it
+```json
+{"ok":true,"service":"survey","sheet":"Responses","actions":["submit","rsvp","read","delete"]}
+```
 
-In `index.html`, replace the placeholder on line 1 of the script block:
+That `actions` list is how you tell a current deployment from a stale one
+without writing anything: if `rsvp` is missing, the live endpoint predates the
+RSVP page and will refuse its requests.
+
+### 3. Point the pages at it
+
+Every page carries the same endpoint. Replace the placeholder near the top of
+the script block in `index.html`, `signup.html` and `admin.html`:
 
 ```js
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfy…/exec";
 ```
 
-Open `index.html` locally (double-click it) and submit a test response — the row
-should appear in your Sheet within a second. This works from a local file too, so
-you can finish testing before you publish anything.
+Open a page locally (double-click it) and submit a test answer — the row should
+appear in your Sheet within a second. This works from a local file too, so you
+can finish testing before you publish anything.
 
 ### 4. Publish on GitHub Pages
 
@@ -82,15 +97,15 @@ In the repo: **Settings ▸ Pages ▸ Source: Deploy from a branch**, branch `ma
 folder `/ (root)`, Save. The form goes live at
 <https://quotationyy.github.io/2026moonfestbbq/> a minute or two later.
 
-> The repo must be **public** for Pages on a free account. `index.html` contains
-> no secrets — the `/exec` URL only accepts appends — so that's fine. Don't commit
-> anything else into this repo.
+> The repo must be **public** for Pages on a free account. No page here holds a
+> secret — the `/exec` URL only accepts appends without the admin password — so
+> that's fine. Don't commit anything else into this repo.
 
 ---
 
 ## Editing the survey
 
-Everything you change lives in the `SURVEY` object in `index.html`. Nothing else
+Everything you change lives in the `SURVEY` object in `signup.html`. Nothing else
 needs touching, and the Sheet picks up new columns by itself.
 
 ```js
@@ -125,6 +140,48 @@ All interface text (button label, error messages, "please choose") lives in the
 **After editing `Code.gs`** you must **Deploy ▸ Manage deployments ▸ ✏️ ▸ Version:
 New version ▸ Deploy**, or the live endpoint keeps running the old code. Editing
 `index.html` just needs a `git push`.
+
+---
+
+## The RSVP page
+
+`index.html` asks one question — are you coming? — and records the answer in a
+sheet named **`RSVP`**, created on first use. The signup rows in `Responses` are
+never touched, so the two pages cannot corrupt each other's data.
+
+The flow is two taps and a name: pick **我會出席** or **無法出席**, type the name
+used at signup, press the confirm button, done.
+
+| Column | Holds |
+|---|---|
+| `timestamp` | when the server recorded it |
+| `name` | as typed |
+| `status` | `attending` or `refund` — the stable key to sort and count on |
+| `status_text` | what the page displayed for that choice, for reading at a glance |
+| `submitted_at` | the browser's clock, ISO 8601 |
+| `source_page` | which URL it came from |
+
+**Answers are append-only.** Someone who changes their mind adds a row rather
+than overwriting one, so the sheet keeps the whole history and *the last row for
+a name is the answer that counts*. The page says so, and offers a 改回覆 link on
+the confirmation screen. To read the current headcount, sort by `timestamp` and
+take the last row per name — or in a scratch cell:
+
+```
+=QUERY(RSVP!A2:F, "select C, count(C) where C is not null group by C label count(C) ''")
+```
+
+which counts rows, not people; for people, de-duplicate on `name` first.
+
+Content — the event details, the two button labels, the confirmation wording —
+is in the `EVENT`, `CHOICES` and `MSG` objects at the top of the script block.
+Nothing below the "以下不需要修改" comment needs editing to change what the page
+says.
+
+Why the destination spreadsheet is named by id in `Code.gs` rather than reached
+through `getActiveSpreadsheet()`: so that the sheet the RSVPs land in is
+readable in the source, instead of being an invisible property of whichever
+document the Apps Script project happens to be bound to.
 
 ---
 
@@ -201,7 +258,7 @@ for a nicer read-only summary, not stronger security.
 ## Other free hosts
 
 GitHub Pages is the right default here, but any of these work identically —
-`index.html` is just a static file:
+these pages are just static files:
 
 - **Cloudflare Pages** — faster globally, allows private repos, custom domain free.
 - **Netlify** — drag-and-drop the folder, no git needed. Has its own form handling
