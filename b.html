@@ -328,8 +328,10 @@ main .card {
    being asked to press a button. */
 .lede { color: hsl(var(--muted-foreground)); }
 .lede p { margin: 0 0 0.6rem; text-wrap: pretty; }
-/* The page's actual question, lifted out of the grey it was sitting in. */
-.lede .hl { color: hsl(var(--primary)); font-weight: 700; }
+/* The page's actual question, lifted out of the grey it was sitting
+   in. Same colour as the deadline line below -- those two are the only
+   things here anyone has to act on. */
+.lede .hl { color: hsl(var(--foreground)); font-weight: 700; }
 .lede p:last-child { margin-bottom: 0; }
 /* The only sentence in this block with a consequence attached, so it
    does not sit in the same grey as the two above it. */
