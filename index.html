@@ -309,6 +309,9 @@ main .card {
 .lede { color: hsl(var(--muted-foreground)); }
 .lede p { margin: 0 0 0.6rem; text-wrap: pretty; }
 .lede p:last-child { margin-bottom: 0; }
+/* The only sentence in this block with a consequence attached, so it
+   does not sit in the same grey as the two above it. */
+.lede .deadline { color: hsl(var(--foreground)); font-weight: 600; }
 
 /* ---------- Footnotes under the choices ---------- */
 .notes {
@@ -621,6 +624,8 @@ const EVENT = {
     "9/26 就要到了，想再跟你確認一次：你會來嗎？",
     "臨時來不了也不要緊，選「無法出席」，費用如數退還。"
   ],
+  /* 有後果的那一句，單獨拉出來是為了讓它不跟上面兩行同一個灰。 */
+  deadline: "請在 9/18（五）前回覆，逾期視為不出席。",
   notes: [
     ["退款方式", "會以當初填寫的退款帳號退款，退款完成會 email 通知。"],
     ["有問題", "IG 直接私訊我。", "https://www.instagram.com/quotation.yy/"]
@@ -695,7 +700,10 @@ function chooseView() {
     </button>`;
   };
   return `
-    <div class="lede">${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}</div>
+    <div class="lede">
+      ${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}
+      <p class="deadline">${esc(EVENT.deadline)}</p>
+    </div>
     <div class="notes">
       ${EVENT.notes.map(([h, t, href]) => `<p>
         <strong>${esc(h)}</strong>${esc(t)}${href ? `<a class="ig"
