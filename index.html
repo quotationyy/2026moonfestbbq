@@ -223,7 +223,9 @@ main .card {
 
 /* ---------- Footnotes under the choices ---------- */
 .notes {
-  margin-top: 2.5rem; padding-top: 1.25rem;
+  /* Half of what it was, which also evens the hairline up: 1.25rem of
+     lede above it, 1.25rem of footnote below. */
+  margin-top: 1.25rem; padding-top: 1.25rem;
   border-top: 1px solid hsl(var(--border));
   display: grid; gap: 0.625rem;
   font-size: 0.8125rem; color: hsl(var(--muted-foreground));
