@@ -134,7 +134,7 @@ body {
 .poster .rules .stripe{display:grid;gap:0.45cqw}
 .poster .rules .stripe i{display:block;width:4.4cqw;height:0.45cqw;background:var(--red)}
 .poster .rules .mid{font-family:var(--slab);font-weight:900;color:var(--navy);
-  font-size:3cqw;letter-spacing:0.4cqw;text-indent:0.4cqw;white-space:nowrap}
+  font-size:3.4cqw;letter-spacing:0.25cqw;text-indent:0.25cqw;white-space:nowrap}
 
 /* The name, distressed by a scratch gradient clipped to the glyphs. */
 .poster .hero{margin-top:1.2cqw;font-weight:900;color:transparent;
@@ -155,15 +155,13 @@ body {
   font-size:2.8cqw;letter-spacing:0.45cqw;text-indent:0.45cqw;
   padding:0.95cqw 2cqw;white-space:nowrap}
 
-.poster .when{margin-top:1.8cqw;display:flex;align-items:baseline;
-  justify-content:center;gap:2.4cqw}
+/* The only place the time appears now, so it is sized to survive the
+   artboard's scaling: 6cqw is 24px on a 393px phone. Everything that
+   has to stay legible on this page is either out here at that size or
+   outside the poster entirely. */
+.poster .when{margin-top:1.8cqw}
 .poster .when .t{font-family:var(--slab);font-weight:900;color:var(--red);
-  font-size:6.8cqw;line-height:0.9}
-.poster .when .d{text-align:left}
-.poster .when .d b{display:block;font-weight:900;color:var(--navy);
-  font-size:3.1cqw;letter-spacing:0.15cqw}
-.poster .when .d span{display:block;margin-top:0.3cqw;font-weight:700;
-  color:var(--navy);font-size:2.2cqw;letter-spacing:0.35cqw}
+  font-size:6cqw;line-height:0.95;letter-spacing:0.1cqw}
 
 /* ============================================================
    The page below the poster
@@ -171,11 +169,11 @@ body {
 main {
   /* No background of its own: the board on body::before runs straight
      through, so there is no edge here to see. */
-  /* No top padding: .facts butts against the poster's bottom edge on
-     purpose. That is only safe because .facts carries no top margin --
-     a margin on the first thing in here would collapse out through
-     main and become main's own, opening a strip of bare body
-     background under the poster. That seam was a real bug once. */
+  /* No top padding, and the first thing in here must never carry a top
+     margin: it would collapse out through main and become main's own,
+     opening a strip of bare body background under the poster. That
+     seam was a real bug once. #app sets its gap in padding for that
+     reason. */
   padding: 0 0 6rem;
   flex: 1 0 auto;
   display: flex; flex-direction: column;
@@ -190,15 +188,13 @@ body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
   width: 100%; max-width: var(--col); margin: 0 auto; padding: 0 1rem;
   flex: 1 0 auto; display: flex; flex-direction: column;
 }
-/* Above the facts row's own breaking point, line the content's gutter
-   up with the poster's, so the date row's rule starts under the title's
-   left edge. The artboard's gutter is 78 of 1080, so the target is
-   7.22% of the column -- but a percentage padding resolves against the
-   containing block, not the element, and main is the full window. Hence
-   the min(): 7.22vw while the column is still viewport-width, then flat
-   once it caps (7.22% of 46rem is 3.32rem). Below 40rem the same gutter
-   would squeeze the two facts columns until the longer date wraps, so
-   the flat 1rem stands there. */
+/* Line the copy's gutter up with the poster's, so the text below sits
+   on the same margin the flyer does. This artboard insets 6cqw -- but a
+   percentage padding resolves against the containing block, not the
+   element, and main is the full window. Hence the min(): 6vw while the
+   column is still viewport-width, then flat once it caps (6% of 38rem
+   is 2.28rem). Below 40rem the flat 1rem stands, so a phone keeps the
+   full width for its longer lines. */
 /* On a large display the design steps up instead of sitting as a small
    column in a big empty field. Everything here is sized in rem or
    derived from --col and --disc, so one step on the root carries the
@@ -209,7 +205,7 @@ body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
 @media (min-width: 120rem) { :root { font-size: 20px; } }
 
 @media (min-width: 40rem) {
-  .wrap { padding-inline: min(7.22vw, 3.32rem); }
+  .wrap { padding-inline: min(6vw, 2.28rem); }
 
   /* Once the artwork stops growing with the window, a tall screen
      turns the hero into a thin strip with a lot of nothing under it.
@@ -223,7 +219,7 @@ body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
     display: flex; flex-direction: column; justify-content: center;
   }
 }
-#app { padding-top: 2.25rem; margin-block: auto; }
+#app { padding-top: 3rem; margin-block: auto; }
 #app > :first-child { margin-top: 0; }
 
 /* ---------- Card ----------
@@ -237,38 +233,6 @@ main .card {
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-bottom: 0.875rem;
-}
-
-/* ---------- The event's hard facts ----------
-   These live out here rather than inside the poster because every
-   length in that artboard is a share of its width: at 375px the date
-   was rendering at 11px, smaller than the body text underneath it.
-   Out here they keep the page's own type scale on every screen, which
-   is the point -- they are the two things a reader might actually
-   need to check before answering. */
-.facts {
-  display: flex; margin: 0;
-  border-top: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
-}
-.facts > div { flex: 1; text-align: center; padding: 1.125rem 0.5rem; }
-.facts > div + div { border-left: 1px solid hsl(var(--border)); }
-.facts dt {
-  color: var(--red);
-  font-size: 0.75rem; font-weight: 600;
-  /* The tracking hangs an extra gap off the last letter; the indent
-     puts the same gap on the left so the label stays optically
-     centred over its value. */
-  letter-spacing: 0.3em; text-indent: 0.3em;
-}
-.facts dd {
-  margin: 0.5rem 0 0;
-  /* Sized to clear 375px without wrapping: the longer value is four
-     latin and seven CJK glyphs, about 9.2em, against the 155px each
-     column gets there. */
-  font-size: clamp(1rem, 3.6vw, 1.25rem);
-  font-weight: 600;
-  color: hsl(var(--foreground));
 }
 
 /* ---------- Lede ----------
@@ -544,7 +508,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   <div class="rules">
     <span class="stripe"><i></i><i></i></span>
     <span class="bar"></span>
-    <span class="mid">SEP&nbsp;26&nbsp;SAT</span>
+    <span class="mid">9/26（六）中秋連假</span>
     <span class="bar"></span>
     <span class="stripe"><i></i><i></i></span>
   </div>
@@ -561,10 +525,7 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 
   <div class="navbar">MEAT&nbsp;UNDER&nbsp;THE&nbsp;MOON</div>
 
-  <div class="when">
-    <span class="t">17:30</span>
-    <span class="d"><b>9/26（六）</b><span>中秋連假</span></span>
-  </div>
+  <div class="when"><span class="t">17:30 – 23:00</span></div>
 
 </div>
 </div>
@@ -609,10 +570,6 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 
 <main>
 <div class="wrap">
-  <dl class="facts">
-    <div><dt>日期</dt><dd>9/26（六）中秋連假</dd></div>
-    <div><dt>時間</dt><dd>17:30 – 23:00</dd></div>
-  </dl>
   <div id="app"></div>
 </div>
 </main>
