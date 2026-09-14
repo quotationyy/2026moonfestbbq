@@ -351,11 +351,10 @@ main .card {
   color: hsl(var(--foreground));
   font-weight: 600; margin-inline-end: 0.6rem;
 }
-/* The credit sits after the mark rather than on a line of its own,
-   and a shade quieter than the note it shares that line with: it is a
-   signature, not something anyone has to act on. */
+/* The credit gets its own line under the footnotes, and sits a shade
+   quieter than them: it is a signature, not something to act on. */
 .notes .credit {
-  margin-inline-start: 0.5rem;
+  margin-top: 0.25rem;
   color: hsl(var(--muted-foreground) / 0.78);
 }
 
@@ -654,9 +653,9 @@ const EVENT = {
   deadline: "麻煩在 9/18（五）前回覆，沒收到的話我們就先當作不參加了。",
   notes: [
     ["退款方式", "會退到你當初填寫的帳號，完成後再寄 email 跟你說一聲。"],
-    ["有問題", "隨時 IG 私訊我們。", "https://www.instagram.com/quotation.yy/",
-     "主辦：George，協辦：Wenning、Ian"]
-  ]
+    ["有問題", "隨時 IG 私訊我們。", "https://www.instagram.com/quotation.yy/"]
+  ],
+  credit: "主辦：George，協辦：Wenning、Ian"
 };
 
 /* 兩個選項。text 是寫進試算表的字，button 是頁面上那顆大按鈕的
@@ -736,12 +735,12 @@ function chooseView() {
       <p class="deadline">${esc(EVENT.deadline)}</p>
     </div>
     <div class="notes">
-      ${EVENT.notes.map(([h, t, href, after]) => `<p>
+      ${EVENT.notes.map(([h, t, href]) => `<p>
         <strong>${esc(h)}</strong>${esc(t)}${href ? `<a class="ig"
           href="${esc(href)}" target="_blank" rel="noopener noreferrer"
-          aria-label="Instagram @quotation.yy">${IG_MARK}</a>` : ""}${
-        after ? `<span class="credit">${esc(after)}</span>` : ""}
+          aria-label="Instagram @quotation.yy">${IG_MARK}</a>` : ""}
       </p>`).join("")}
+      <p class="credit">${esc(EVENT.credit)}</p>
     </div>
     <div class="choices">${Object.keys(CHOICES).map(btn).join("")}</div>`;
 }
