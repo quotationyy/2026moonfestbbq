@@ -1,29 +1,65 @@
-# 2026 Mid-Autumn BBQ — GitHub Pages + Google Sheets
+# 中秋卡肉趴 — attendance confirmation
 
-Static pages that post straight into a Google Sheet. No server, no database,
+One static page that asks guests whether they are still coming, and
+records the answer straight into a Google Sheet. No server, no database,
 no monthly cost.
 
 ```
 visitor's browser  ──POST JSON──▶  Apps Script Web App  ──appends row──▶  Google Sheet
-   (GitHub Pages)                    (script.google.com)
+   (GitHub Pages)                    (script.google.com)                    (RSVP)
 ```
 
 | Piece | What it does | Cost |
 |---|---|---|
-| `index.html` | RSVP page — two buttons, a name, done. Appends to the `RSVP` sheet. | free |
-| `signup.html` | The original 11-question signup form. Appends to `Responses`. | free |
-| `admin.html` | Password-gated dashboard over `Responses`. | free |
+| `index.html` | The whole page. Static file — host anywhere. | free |
 | `Code.gs` | The API endpoint. Runs inside Google. | free |
 | Google Sheet | The database, plus charts and CSV export for free. | free |
 
-`index.html` was the signup form until signups closed. It is now the
-attendance-confirmation page, and the form moved to `signup.html` untouched —
-so the link already sent out keeps working and now asks the question that
-matters at this point in the run-up.
+Signups themselves never went through this repo — they were taken on a
+separate Google Form, and that form's responses are the real guest list.
+This page only asks the follow-up question.
 
-Why Apps Script rather than a Sheets API key: an API key in a public HTML file
-is readable by anyone, and would let strangers write to your Sheet. The Web App
-runs *as you* on Google's side, so nothing secret ever ships to the browser.
+Why Apps Script rather than a Sheets API key: an API key in a public HTML
+file is readable by anyone, and would let strangers write to the Sheet.
+The Web App runs *as the owner* on Google's side, so nothing secret ever
+ships to the browser.
+
+---
+
+## The page
+
+`index.html` asks one question — are you coming? — and records the answer
+in a sheet named **`RSVP`**, created on first use.
+
+The flow is two taps and a name: press **我會出席** or **無法出席**, type
+the name used at signup, press the confirm button, done.
+
+| Column | Holds |
+|---|---|
+| `timestamp` | when the server recorded it |
+| `name` | as typed |
+| `status` | `attending` or `refund` — the stable key to sort and count on |
+| `status_text` | what the page displayed for that choice, for reading at a glance |
+| `submitted_at` | the browser's clock, ISO 8601 |
+| `source_page` | which URL it came from |
+
+**Answers are append-only.** Someone who changes their mind adds a row
+rather than overwriting one, so the sheet keeps the whole history and
+*the last row for a name is the answer that counts*. The confirmation
+screen offers a way back to the choices. To read the current standing,
+sort by `timestamp` and take the last row per name.
+
+Content — the lede, the two button labels, the confirmation wording — is
+in the `EVENT`, `CHOICES` and `MSG` objects at the top of the script
+block. The date, the time and the event's name are in the markup: the
+poster's in `<header>`, the date and time in the `.facts` list just below
+it. Nothing under the "以下不需要修改" comment needs editing to change
+what the page says.
+
+**Do not put anything readable inside the poster.** It is a fixed
+1080×407 artboard scaled with `zoom`, so a 32px figure in there renders
+at 11px on a 375px screen — smaller than the body text under it. That is
+why the date and time sit outside it.
 
 ---
 
@@ -34,6 +70,12 @@ runs *as you* on Google's side, so nothing secret ever ships to the browser.
 1. Make a new spreadsheet at [sheets.new](https://sheets.new). Name it anything.
 2. **Extensions ▸ Apps Script.** A code editor opens in a new tab.
 3. Delete the sample `myFunction` code, paste in all of **`Code.gs`**, and save (⌘S).
+4. Put that spreadsheet's id into `RSVP_SPREADSHEET_ID` at the top of
+   `Code.gs`. It is the long string in the sheet's URL between `/d/` and
+   `/edit`. The RSVP rows go there by id rather than through
+   `getActiveSpreadsheet()`, so the destination is readable in the source
+   instead of being an invisible property of whichever document the
+   project is bound to.
 
 ### 2. Deploy it as a Web App
 
@@ -53,35 +95,34 @@ Verify it: paste that URL into a browser tab. You should see
 ```
 
 That `actions` list is how you tell a current deployment from a stale one
-without writing anything: if `rsvp` is missing, the live endpoint predates the
-RSVP page and will refuse its requests.
+without writing anything: if `rsvp` is missing, the live endpoint predates
+this page and will refuse its requests — and say so on the page rather
+than failing silently.
 
-### 3. Point the pages at it
+### 3. Point the page at it
 
-Every page carries the same endpoint. Replace the placeholder near the top of
-the script block in `index.html`, `signup.html` and `admin.html`:
+Replace the placeholder near the top of the script block in `index.html`:
 
 ```js
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfy…/exec";
 ```
 
-Open a page locally (double-click it) and submit a test answer — the row should
-appear in your Sheet within a second. This works from a local file too, so you
-can finish testing before you publish anything.
+Open `index.html` locally (double-click it) and send a test answer — the
+row should appear in your Sheet within a second. This works from a local
+file too, so you can finish testing before you publish anything.
 
 ### 4. Publish on GitHub Pages
 
-This repo pushes to the **`quotationyy`** GitHub account, which is not the default
-SSH identity on this machine. `~/.ssh/config` has a `github-alt` host alias
-pointing at `~/.ssh/id_ed25519_github_alt`, so the remote is:
+This repo pushes to the **`quotationyy`** GitHub account, which is not the
+default SSH identity on the author's machine. `~/.ssh/config` has a
+`github-alt` host alias pointing at `~/.ssh/id_ed25519_github_alt`, so the
+remote is:
 
 ```
 git@github-alt:quotationyy/2026moonfestbbq.git
 ```
 
-Check you are pushing as the right account — this must print `Hi quotationyy!`,
-**not** `Hi wenninghsu!` (the old key stays configured as a fallback, so a missing
-key shows up as the wrong name rather than an outright error):
+Check you are pushing as the right account — this must print `Hi quotationyy!`:
 
 ```bash
 ssh -T git@github-alt
@@ -93,179 +134,37 @@ Then:
 git push -u origin main
 ```
 
-In the repo: **Settings ▸ Pages ▸ Source: Deploy from a branch**, branch `main`,
-folder `/ (root)`, Save. The form goes live at
+In the repo: **Settings ▸ Pages ▸ Source: Deploy from a branch**, branch
+`main`, folder `/ (root)`, Save. The page goes live at
 <https://quotationyy.github.io/2026moonfestbbq/> a minute or two later.
 
-> The repo must be **public** for Pages on a free account. No page here holds a
-> secret — the `/exec` URL only accepts appends without the admin password — so
-> that's fine. Don't commit anything else into this repo.
+> The repo must be **public** for Pages on a free account. The page holds
+> no secret — the `/exec` URL only accepts appends — so that's fine.
+
+**After editing `Code.gs`** you must **Deploy ▸ Manage deployments ▸ ✏️ ▸
+Version: New version ▸ Deploy**, or the live endpoint keeps running the
+old code. Editing `index.html` just needs a `git push`.
 
 ---
-
-## Editing the survey
-
-Everything you change lives in the `SURVEY` object in `signup.html`. Nothing else
-needs touching, and the Sheet picks up new columns by itself.
-
-```js
-{
-  id: "delivery_date",          // becomes the Sheet column header — keep it unique
-  type: "text",
-  label: "When do you need this by?",
-  help: "Approximate is fine.", // optional
-  required: true                // optional
-}
-```
-
-| `type` | Renders as | Extra keys |
-|---|---|---|
-| `text` | one-line input | |
-| `textarea` | multi-line box | |
-| `email` | one line, format-checked | |
-| `number` | numeric input | `min`, `max` |
-| `radio` | pick exactly one | `options: [...]` |
-| `checkbox` | pick any number (saved comma-separated) | `options: [...]` |
-| `select` | dropdown | `options: [...]` |
-| `scale` | 1–N rating buttons | `max`, `minLabel`, `maxLabel` |
-
-Labels, options and answers are all UTF-8, so Chinese text works as-is.
-
-Option lists longer than 6 items automatically flow into responsive columns
-rather than one tall stack, so a 19-item question stays scrollable on a phone.
-
-All interface text (button label, error messages, "please choose") lives in the
-`MSG` object just below `SURVEY` — change the language there in one place.
-
-**After editing `Code.gs`** you must **Deploy ▸ Manage deployments ▸ ✏️ ▸ Version:
-New version ▸ Deploy**, or the live endpoint keeps running the old code. Editing
-`index.html` just needs a `git push`.
-
----
-
-## The RSVP page
-
-`index.html` asks one question — are you coming? — and records the answer in a
-sheet named **`RSVP`**, created on first use. The signup rows in `Responses` are
-never touched, so the two pages cannot corrupt each other's data.
-
-The flow is two taps and a name: pick **我會出席** or **無法出席**, type the name
-used at signup, press the confirm button, done.
-
-| Column | Holds |
-|---|---|
-| `timestamp` | when the server recorded it |
-| `name` | as typed |
-| `status` | `attending` or `refund` — the stable key to sort and count on |
-| `status_text` | what the page displayed for that choice, for reading at a glance |
-| `submitted_at` | the browser's clock, ISO 8601 |
-| `source_page` | which URL it came from |
-
-**Answers are append-only.** Someone who changes their mind adds a row rather
-than overwriting one, so the sheet keeps the whole history and *the last row for
-a name is the answer that counts*. The page says so, and offers a 改回覆 link on
-the confirmation screen. To read the current headcount, sort by `timestamp` and
-take the last row per name — or in a scratch cell:
-
-```
-=QUERY(RSVP!A2:F, "select C, count(C) where C is not null group by C label count(C) ''")
-```
-
-which counts rows, not people; for people, de-duplicate on `name` first.
-
-Content — the event details, the two button labels, the confirmation wording —
-is in the `EVENT`, `CHOICES` and `MSG` objects at the top of the script block.
-Nothing below the "以下不需要修改" comment needs editing to change what the page
-says.
-
-Why the destination spreadsheet is named by id in `Code.gs` rather than reached
-through `getActiveSpreadsheet()`: so that the sheet the RSVPs land in is
-readable in the source, instead of being an invisible property of whichever
-document the Apps Script project happens to be bound to.
-
----
-
-## The admin page
-
-`admin.html` shows every response — headcount, parking counts, dietary notes, a
-full table, CSV export, and per-row delete. It is served from the same public
-GitHub Pages site, so it is built on one rule: **the page holds no secret and
-no data.**
-
-A password typed into it is POSTed to Apps Script, which compares it against a
-Script Property and only then returns rows. Reading `admin.html`'s source, or
-skipping it and calling `/exec` directly, gets an attacker nothing without the
-password. Never move the password into this repo — the repo is public.
-
-### Setting the password
-
-In the Apps Script editor: **⚙️ Project Settings ▸ Script Properties ▸ Add
-script property**
-
-| Property | Value |
-|---|---|
-| `ADMIN_PASSWORD` | your password |
-
-Then **Deploy ▸ Manage deployments ▸ ✏️ ▸ Version: New version ▸ Deploy**.
-Changing a Script Property alone needs no redeploy; changing `Code.gs` does.
-
-### What protects it, and what does not
-
-| | |
-|---|---|
-| ✅ | Password never reaches the browser — it is only ever sent *to* the server |
-| ✅ | Wrong guesses cost 1.5s each; 8 failures lock reads for 15 minutes |
-| ✅ | Comparison is constant-time, so timing leaks nothing |
-| ✅ | HTTPS everywhere; `noindex` keeps the page out of search results |
-| ⚠️ | One shared password — it cannot be revoked for one person only |
-| ⚠️ | The lockout is global, so someone could deliberately lock admins out for 15 minutes |
-| ⚠️ | Anyone holding the password sees every response, including phone numbers |
-
-### Deleting a response
-
-Delete moves the row to a **`Deleted`** sheet (created on first use, with a
-`deleted_at` column) and only then removes it from `Responses`. Nothing is
-permanently destroyed, so a misclick is recoverable — copy the row back.
-
-Row numbers shift the moment anything is deleted, so the dashboard sends the
-name and timestamp it believes are on that row and the server refuses the
-delete if they do not match. Two admins working from stale tabs therefore
-cannot delete each other's records by accident.
-
-For per-person access that you can revoke individually, share the Google Sheet
-with each admin's Google account instead (**Share** in the spreadsheet). That
-uses real Google authentication and needs no password at all — the admin page is
-for a nicer read-only summary, not stronger security.
 
 ## Good to know
 
-- **Reordering or renaming a question `id`** starts a new column; old responses
-  stay under the old header. Rename in the Sheet too if you want them merged.
-- **Spam:** there's a hidden honeypot field that silently drops bots. Enough for a
-  low-traffic form. If you get flooded, the cheap fix is turning "Who has access"
-  back to *Anyone with a Google account*, which forces a sign-in.
-- **Quotas:** Apps Script allows ~20,000 URL-fetch-free executions/day on a free
-  account. A survey will not come close.
-- **Email on each response:** add this inside `doPost`, just before the final
-  `return json_({ ok: true, ... })`:
-  ```js
-  MailApp.sendEmail(Session.getEffectiveUser().getEmail(),
-                    'New survey response', JSON.stringify(answers, null, 2));
-  ```
-- **`Couldn't send: Failed to fetch`** almost always means the deployment's access
-  is not set to *Anyone*, or a redeploy is needed after editing `Code.gs`.
-
-## Other free hosts
-
-GitHub Pages is the right default here, but any of these work identically —
-these pages are just static files:
-
-- **Cloudflare Pages** — faster globally, allows private repos, custom domain free.
-- **Netlify** — drag-and-drop the folder, no git needed. Has its own form handling
-  (100 submissions/month free) if you'd rather skip Apps Script entirely.
-- **Vercel** — fine, but aimed at apps; overkill for one HTML file.
-
-And the honest alternative: if you don't need custom styling or your own domain,
-**Google Forms** does all of this with zero code. Build this instead when you want
-control over the look, want it embedded in your own site, or need logic Forms can't
-express.
+- **`Code.gs` must stay pure ASCII.** It is pasted through a browser into
+  the Apps Script editor, and Chinese strings have been mangled to
+  mojibake on that path before — the deployed server really did return
+  garbage. Anything a reader sees in Chinese is sent up by the page and
+  written through; the backend only speaks English plus a stable `code`
+  field.
+- **Three actions in `Code.gs` have no caller any more.** `submit`, `read`
+  and `delete` served a signup form and an admin dashboard that were
+  removed once signups moved to a Google Form. They are harmless — `read`
+  and `delete` need a password, `submit` only appends to the unused
+  `Responses` sheet — but they can be deleted whenever it is worth one
+  more redeploy.
+- **Spam:** there's a hidden honeypot field that silently drops bots.
+  Enough for a low-traffic page.
+- **Quotas:** Apps Script allows ~20,000 executions/day on a free account.
+  A party will not come close.
+- **`Couldn't send: Failed to fetch`** almost always means the
+  deployment's access is not set to *Anyone*, or a redeploy is needed
+  after editing `Code.gs`.
