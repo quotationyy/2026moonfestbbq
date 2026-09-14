@@ -140,8 +140,7 @@ body {
    would not. */
 .poster .info{margin-top:auto;display:flex;padding:38px 0;
   border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
-.poster .col{flex:1;padding-left:36px}
-.poster .col:first-child{padding-left:0}
+.poster .col{flex:1;text-align:center;padding:0 16px}
 .poster .col+.col{border-left:1px solid var(--hair)}
 .poster .lab{color:var(--accent);font-weight:600;font-size:21px;letter-spacing:5px}
 .poster .big{color:var(--text1);font-weight:600;font-variation-settings:"opsz" 32;font-size:52px;margin-top:14px;line-height:1.05;white-space:nowrap}
@@ -379,7 +378,6 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
   <div class="info z">
     <div class="col"><div class="lab">日期</div><div class="big">9/26</div><div class="sm">（六）中秋連假</div></div>
     <div class="col"><div class="lab">時間</div><div class="big">17:30</div><div class="sm">– 23:00</div></div>
-    <div class="col"><div class="lab">均攤</div><div class="big">$1,500</div><div class="sm">場地我出</div></div>
   </div>
 
   <div class="foot z">
@@ -447,8 +445,8 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp-tErARlbGJ30wrcv4
 /* ============================================================
    2. 頁面文字。要改內容改這裡就好。
 
-      日期、時間、費用、地點都在海報上了，這裡不重複，只說「為什
-      麼要按這顆按鈕」。
+      日期、時間、地點都在海報上了，這裡不重複，只說「為什麼要按
+      這顆按鈕」。
    ============================================================ */
 const EVENT = {
   lede: [
