@@ -163,7 +163,7 @@ main {
 }
 /* Only while the discs are up: the page has to end above them, and the
    clearance tracks --disc so it stays right at every width. */
-body.picking main { padding-bottom: calc(var(--disc) + 7rem); }
+body.picking main { padding-bottom: calc(var(--disc) + 5rem); }
 .wrap { max-width: 40rem; margin: 0 auto; padding: 0 1rem; }
 #app { margin-top: 2.25rem; }
 #app > :first-child { margin-top: 0; }
@@ -343,7 +343,7 @@ button:disabled { opacity: 0.5; cursor: default; }
    never be something you have to scroll to find. */
 .choices {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-  display: flex; align-items: start; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   gap: clamp(1.25rem, 7vw, 3rem);
   padding: 1.5rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
   /* Fades the page out behind the discs rather than cutting it with a
@@ -357,25 +357,23 @@ button:disabled { opacity: 0.5; cursor: default; }
      page underneath it. */
   pointer-events: none;
 }
-.pick {
-  display: grid; gap: 0.875rem; width: var(--disc);
-  pointer-events: auto;
-}
-
 /* A disc, so it opts out of the fixed button height rather than
-   fighting it. The caption stays outside: a circle's usable width is
-   only about 70% of its diameter, and a second line inside would push
-   the disc wider than two of them fit at 375px. */
+   fighting it. A second line fits inside because it is short: six
+   characters at 11px need 66px against a 121px chord even at the
+   phone's 128px disc. An eleven-character line would not, which is
+   why the one that used to sit under the other disc is gone rather
+   than moved in beside it. */
 .choice {
-  width: 100%; height: auto; aspect-ratio: 1;
+  width: var(--disc); height: auto; aspect-ratio: 1;
+  pointer-events: auto;
   border-radius: 50%;
-  display: grid; place-content: center;
-  padding: 0; white-space: nowrap;
+  display: grid; place-content: center; gap: 0.2rem;
+  padding: 0; white-space: nowrap; text-align: center;
   font-size: 1.0625rem; font-weight: 800; letter-spacing: 0.06em;
 }
-.cap {
-  font-size: 0.6875rem; line-height: 1.5; text-align: center;
-  color: hsl(var(--muted-foreground));
+.choice .sub {
+  font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.02em;
+  opacity: 0.72;
 }
 
 /* A landscape phone is short enough that the bar's own padding starts
@@ -385,7 +383,6 @@ button:disabled { opacity: 0.5; cursor: default; }
   .choices {
     padding-block: 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
-  .pick { gap: 0.5rem; }
 }
 
 /* The "can't make it" path gets the quiet outline, not destructive
@@ -526,7 +523,7 @@ const EVENT = {
 const CHOICES = {
   attending: {
     text:    "會出席",
-    button:  ["我會出席", "人到就好，其餘都備妥了"],
+    button:  ["我會出席"],
     confirm: "確定會出席",
     done:    ["回覆完成", "9/26 見。"]
   },
@@ -573,11 +570,11 @@ let choice = null;
 function chooseView() {
   const btn = (id) => {
     const c = CHOICES[id];
-    return `<div class="pick">
-      <button type="button" class="choice${id === "attending" ? "" : " outline"}"
-              data-choice="${esc(id)}">${esc(c.button[0])}</button>
-      <span class="cap">${esc(c.button[1])}</span>
-    </div>`;
+    const sub = c.button[1] ? `<span class="sub">${esc(c.button[1])}</span>` : "";
+    return `<button type="button" class="choice${id === "attending" ? "" : " outline"}"
+                    data-choice="${esc(id)}">
+      <span>${esc(c.button[0])}</span>${sub}
+    </button>`;
   };
   return `
     <div class="lede">${EVENT.lede.map(p => `<p>${esc(p)}</p>`).join("")}</div>
