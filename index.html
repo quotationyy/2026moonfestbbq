@@ -713,6 +713,22 @@ const remembered = {
   set(v) { try { localStorage.setItem("rsvp_name", v); } catch (e) {} }
 };
 
+/* ?n=王小明 fills the name in for them. Send each guest their own link
+   and nobody has to type -- which also means the name lands in the
+   sheet spelled the way the guest list spells it, instead of however
+   they happened to type it on a phone.
+
+   Read once at load rather than per render, so it survives the back
+   link without re-reading the URL. Capped at 40 characters: the field
+   is a name, and a query string is the easiest place for someone to
+   paste something silly. */
+const NAME_FROM_URL = (() => {
+  try {
+    return (new URLSearchParams(location.search).get("n") || "")
+      .trim().slice(0, 40);
+  } catch (e) { return ""; }
+})();
+
 /* null while the two buttons are showing, otherwise a CHOICES key.
    That single value is the whole state machine: choose -> confirm. */
 let choice = null;
@@ -754,7 +770,7 @@ function confirmView() {
         <label class="lbl" for="name">${esc(MSG.nameQ)}<span class="req">*</span></label>
         <p class="desc">${esc(MSG.nameDesc)}</p>
         <input type="text" id="name" autocomplete="name" enterkeyhint="send"
-               value="${esc(remembered.get())}">
+               value="${esc(NAME_FROM_URL || remembered.get())}">
         <p class="err">${esc(MSG.nameReq)}</p>
       </div>
       <!-- Honeypot: real users never see it, bots fill it in. -->
