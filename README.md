@@ -19,6 +19,14 @@ Signups themselves never went through this repo — they were taken on a
 separate Google Form, and that form's responses are the real guest list.
 This page only asks the follow-up question.
 
+It has been through five visual directions. The one here is a
+letterpress flyer in cream, navy and red; the other four are on the
+`five-styles` tag and any of them comes back with a single checkout:
+
+```bash
+git checkout five-styles -- c.html
+```
+
 Why Apps Script rather than a Sheets API key: an API key in a public HTML
 file is readable by anyone, and would let strangers write to the Sheet.
 The Web App runs *as the owner* on Google's side, so nothing secret ever
@@ -51,15 +59,24 @@ sort by `timestamp` and take the last row per name.
 
 Content — the lede, the two button labels, the confirmation wording — is
 in the `EVENT`, `CHOICES` and `MSG` objects at the top of the script
-block. The date, the time and the event's name are in the markup: the
-poster's in `<header>`, the date and time in the `.facts` list just below
-it. Nothing under the "以下不需要修改" comment needs editing to change
-what the page says.
+block. The event's name, date and time are in the poster's markup in
+`<header>`. Nothing under the "以下不需要修改" comment needs editing to
+change what the page says.
 
-**Do not put anything readable inside the poster.** It is a fixed
-1080×407 artboard scaled with `zoom`, so a 32px figure in there renders
-at 11px on a 375px screen — smaller than the body text under it. That is
-why the date and time sit outside it.
+**Size anything you put in the poster from the phone, not the desktop.**
+Every length in there is `cqw` — a share of the artboard's own width —
+so it all shrinks together. At 393px wide 1cqw is 3.9px, which puts
+body-text legibility at about 3.4cqw; the date and time are 4.4 and 6.
+The date was 13px before it was moved up here, which is what the last
+round of changes was about.
+
+The artboard was a fixed 1080px canvas scaled with `zoom` for most of
+its life. That came out because a frame carrying an `aspect-ratio`
+inside a flex container is sized differently by WebKit and Chromium: on
+an iPhone the artwork scaled to 736px inside a 393px window and the
+title ran off the screen, while every measurement taken in Chromium
+said it was fine. Nothing here measures anything any more, and that is
+deliberate.
 
 ---
 
