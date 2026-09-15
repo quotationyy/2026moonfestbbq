@@ -147,7 +147,11 @@ body {
 
 .poster .emblem{display:block;margin:1.4cqw auto 0;width:15.5cqw;height:auto;
   color:var(--red)}
-.poster .stars{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+/* One square SVG per star, sized and placed in cqw. They were a single
+   stretched-to-fit SVG before, which meant every star was scaled by the
+   poster's own 1.69:1 and came out oval. A square viewBox in a square
+   box cannot be distorted by the shape of anything around it. */
+.poster .star{position:absolute;display:block;height:auto;z-index:0}
 
 /* Solid navy, cream out of it. */
 .poster .navbar{margin-top:1.6cqw;background:var(--navy);color:#F6EFDF;
@@ -521,7 +525,6 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 <div class="poster-frame">
 <div class="poster" id="poster">
 
-  <svg class="stars" id="stars" preserveAspectRatio="none" aria-hidden="true"></svg>
 
   <div class="join">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</div>
 
@@ -557,36 +560,62 @@ button.link:hover:not(:disabled) { color: hsl(var(--foreground)); opacity: 1; }
 
 <script>
 /* The stars the reference scatters around its grill. Generated rather
-   than written out for the same reason the last one's facets were:
-   sixteen polygons of markup, none of them meaning anything. Placed
-   down both margins only, so nothing lands on the type. */
+   than written out: sixteen of them would bury the markup and none of
+   them mean anything.
+
+   Each is its own square SVG placed in cqw, not a shape inside one
+   stretched SVG -- a single container scaled to the poster's 1.69:1
+   made every star an oval. Kept to the two side margins and above the
+   navy bar, which is the only region of this poster with nothing in
+   it. */
 (function () {
-  const svg = document.getElementById("stars");
-  const W = 100, H = 100;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const poster = document.getElementById("poster");
+  const NS = "http://www.w3.org/2000/svg";
   const rand = (a, b) => a + Math.random() * (b - a);
 
-  /* A five-pointed star as a path, scaled and dropped at (cx,cy). */
-  const star = (cx, cy, r, fill) => {
-    let d = "";
-    for (let i = 0; i < 10; i++) {
-      const rad = i % 2 ? r * 0.42 : r;
-      const a = (Math.PI / 5) * i - Math.PI / 2;
-      d += (i ? "L" : "M") + (cx + rad * Math.cos(a)).toFixed(2)
-         + "," + (cy + rad * Math.sin(a)).toFixed(2);
+  /* A five-pointed star in a 24x24 box. */
+  let d = "";
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 ? 4.6 : 11;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    d += (i ? "L" : "M") + (12 + r * Math.cos(a)).toFixed(2)
+       + "," + (12 + r * Math.sin(a)).toFixed(2);
+  }
+  d += "Z";
+
+  /* Rejection sampling, so two stars never land on top of each other.
+     Pure random in a band this narrow clumps visibly -- a handful of
+     tries each is enough to read as scattered rather than spilled. */
+  const placed = [];
+  const spot = () => {
+    for (let t = 0; t < 40; t++) {
+      const x = Math.random() < 0.5 ? rand(0.5, 12.5) : rand(85, 97);
+      const y = rand(12, 40);
+      if (placed.every(q => Math.hypot(q.x - x, (q.y - y) * 0.6) > 4.4))
+        return { x, y };
     }
-    return `<path d="${d}Z" fill="${fill}"/>`;
+    return null;
   };
 
-  let out = "";
   for (let i = 0; i < 16; i++) {
-    const left = i % 2 === 0;
-    const cx = left ? rand(2, 13) : rand(87, 98);
-    const cy = rand(28, 88);
-    out += star(cx, cy, rand(1.1, 2.1),
-                Math.random() < 0.5 ? "#D63B31" : "#1F3A76");
+    const at = spot();
+    if (!at) continue;
+    placed.push(at);
+
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "star");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.left  = at.x + "cqw";
+    svg.style.top   = at.y + "cqw";
+    svg.style.width = rand(1.6, 3.2) + "cqw";
+
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", d);
+    path.setAttribute("fill", Math.random() < 0.5 ? "#D63B31" : "#1F3A76");
+    svg.appendChild(path);
+    poster.appendChild(svg);
   }
-  svg.innerHTML = out;
 })();
 </script>
 
