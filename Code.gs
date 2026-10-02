@@ -1,21 +1,25 @@
 /**
  * Survey backend -- Google Apps Script Web App.
  *
- * Four actions, all over POST:
+ * Five actions, all over POST:
  *
  *   (no action) / "submit"  append one response row  -- public
  *   "rsvp"                  append one attendance answer -- public
+ *   "photo"                 commit one photo to GitHub -- public
  *   "read"                  return every response    -- password required
  *   "delete"                archive one response     -- password required
  *
  * "rsvp" is a separate, later addition: it writes to its own sheet and
  * never touches the signup rows, so the two pages cannot corrupt each
- * other's data.
+ * other's data. "photo" is later still, and touches no sheet at all: it
+ * writes image files into the GitHub repository that serves
+ * photos/index.html.
  *
- * The admin password is NOT in this file. This file lives in a public
- * GitHub repository, so anything written here is world-readable. The
- * password is read from a Script Property named ADMIN_PASSWORD, which is
- * stored on Google's side and never enters git. See README.md.
+ * No secret is in this file. It lives in a public GitHub repository, so
+ * anything written here is world-readable. The admin password and the
+ * GitHub token are read from Script Properties named ADMIN_PASSWORD and
+ * GITHUB_TOKEN, which are stored on Google's side and never enter git.
+ * See README.md.
  *
  * Deployment steps are in README.md.
  */
@@ -41,16 +45,38 @@ var FAIL_DELAY_MS   = 1500;
 var MAX_FAILS       = 8;
 var LOCKOUT_MINUTES = 15;
 
-/** Visiting the /exec URL in a browser hits this -- a quick "is it live?" check. */
+// Photos from photos/index.html are committed into this repository, the
+// same one GitHub Pages serves, so the page can show them from its own
+// site. Full size goes to PHOTO_DIR/img, thumbnails to PHOTO_DIR/thumb,
+// under the same file name.
+var PHOTO_REPO      = 'quotationyy/2026moonfestbbq';
+var PHOTO_BRANCH    = 'main';
+var PHOTO_DIR       = 'photos';
+var TOKEN_PROPERTY  = 'GITHUB_TOKEN';
+var PHOTO_TIMEZONE  = 'Asia/Taipei';     // file names read as local time
+// Decoded sizes. The page sends about 0.5 MB and 50 KB; these only stop
+// something that did not come from the page.
+var PHOTO_MAX_BYTES = 4 * 1024 * 1024;
+var THUMB_MAX_BYTES = 400 * 1024;
+
+/**
+ * Visiting the /exec URL in a browser hits this -- a quick "is it live?"
+ * check. photoReady says whether GITHUB_TOKEN is set, without saying
+ * anything about the token itself.
+ */
 function doGet() {
+  var token = PropertiesService.getScriptProperties().getProperty(TOKEN_PROPERTY);
   return json_({ ok: true, service: 'survey', sheet: SHEET_NAME,
-    actions: ['submit', 'rsvp', 'read', 'delete'] });
+    actions: ['submit', 'rsvp', 'photo', 'read', 'delete'],
+    photoReady: !!token });
 }
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
-    // Two people submitting at the same moment must not race on the header row.
+    // Two people submitting at the same moment must not race on the header
+    // row. Photos need the same: GitHub's contents API conflicts when two
+    // writes to one branch overlap, so commits have to go one at a time.
     lock.waitLock(30000);
   } catch (err) {
     return json_({ ok: false, code: 'busy', error: 'Server busy, please retry.' });
@@ -64,6 +90,7 @@ function doPost(e) {
     var action = payload.action;
 
     if (action === 'rsvp') return handleRsvp_(payload);
+    if (action === 'photo') return handlePhoto_(payload);
 
     if (action === 'read' || action === 'delete') {
       var refusal = authorize_(payload);
@@ -196,6 +223,108 @@ function getRsvpSheet_() {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+/* ------------------------------------------------------------------ */
+/* Public: commit one photo to GitHub                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Write one photo and its thumbnail into the GitHub repository.
+ *
+ * The page does all of the image work -- it scales the picture down,
+ * re-encodes it as JPEG (which also drops EXIF, GPS position included)
+ * and cuts the thumbnail -- so this only checks what arrived and commits
+ * it. Apps Script has no image library to do any of that here.
+ *
+ * The file name is chosen here, never by the caller: a Taipei timestamp,
+ * so names sort in upload order, plus a random tail so two uploads in the
+ * same millisecond cannot collide. Nothing the caller sends reaches a path.
+ *
+ * The full-size file goes first and is the one that counts: the page lists
+ * PHOTO_DIR/img and falls back to the full image where a thumbnail is
+ * missing. A thumbnail that fails after that is reported as thumb:false
+ * rather than as a failure, because a retry would upload the photo twice.
+ */
+function handlePhoto_(payload) {
+  var token = PropertiesService.getScriptProperties().getProperty(TOKEN_PROPERTY);
+  if (!token) {
+    return json_({ ok: false, code: 'no_token', error:
+      'GITHUB_TOKEN is not set. Add it under Project Settings > Script Properties.' });
+  }
+
+  var problem = jpegProblem_(payload.full, PHOTO_MAX_BYTES);
+  if (problem) return json_({ ok: false, code: 'bad_image', error: 'full: ' + problem });
+  problem = jpegProblem_(payload.thumb, THUMB_MAX_BYTES);
+  if (problem) return json_({ ok: false, code: 'bad_image', error: 'thumb: ' + problem });
+
+  var name = Utilities.formatDate(new Date(), PHOTO_TIMEZONE, 'yyyyMMdd-HHmmss-SSS')
+           + '-' + Utilities.getUuid().slice(0, 4) + '.jpg';
+
+  var full = putFile_(token, PHOTO_DIR + '/img/' + name, payload.full, 'Add photo ' + name);
+  if (full.status !== 201) return githubFailure_(full);
+
+  var thumb = putFile_(token, PHOTO_DIR + '/thumb/' + name, payload.thumb, 'Add thumbnail ' + name);
+  return json_({ ok: true, name: name, thumb: thumb.status === 201 });
+}
+
+/** Why a base64 string is not an acceptable JPEG, or null when it is. */
+function jpegProblem_(b64, maxBytes) {
+  if (typeof b64 !== 'string' || !b64) return 'missing';
+  if (Math.floor(b64.length * 3 / 4) > maxBytes) return 'too large';
+  if (!/^[A-Za-z0-9+\/]+={0,2}$/.test(b64)) return 'not base64';
+  // Every JPEG opens with FF D8 FF. Apps Script hands bytes back signed.
+  var head = Utilities.base64Decode(b64.slice(0, 4));
+  if ((head[0] & 0xff) !== 0xff || (head[1] & 0xff) !== 0xd8 ||
+      (head[2] & 0xff) !== 0xff) return 'not a JPEG';
+  return null;
+}
+
+/**
+ * Create one file through GitHub's contents API; returns { status, message }.
+ *
+ * 409 means the branch moved during the request -- someone pushed at that
+ * moment. The script lock stops this code from doing that to itself, so a
+ * couple of short retries cover it.
+ */
+function putFile_(token, path, b64, message) {
+  var options = {
+    method: 'put',
+    contentType: 'application/json',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    payload: JSON.stringify({ message: message, content: b64, branch: PHOTO_BRANCH }),
+    muteHttpExceptions: true
+  };
+  var url = 'https://api.github.com/repos/' + PHOTO_REPO + '/contents/' + path;
+  for (var attempt = 0; ; attempt++) {
+    var res = UrlFetchApp.fetch(url, options);
+    var status = res.getResponseCode();
+    if (status === 409 && attempt < 2) { Utilities.sleep(1000); continue; }
+    var text = status === 201 ? '' : res.getContentText();
+    var said = '';
+    try { said = JSON.parse(text).message || ''; } catch (err) { said = text.slice(0, 200); }
+    return { status: status, message: said };
+  }
+}
+
+/**
+ * Turn a failed GitHub write into a response the page can act on.
+ * github_busy is worth retrying in a moment; bad_token is not, and means
+ * the token in Script Properties has expired, been revoked, or does not
+ * have Contents write access to PHOTO_REPO.
+ */
+function githubFailure_(result) {
+  var s = result.status;
+  var limited = s === 429 || (s === 403 && /rate limit/i.test(result.message));
+  var code = (limited || s === 409 || s >= 500) ? 'github_busy'
+           : (s === 401 || s === 403 || s === 404) ? 'bad_token'
+           : 'github_error';
+  return json_({ ok: false, code: code, status: s,
+    error: 'GitHub refused the write (' + s + '): ' + result.message });
 }
 
 /* ------------------------------------------------------------------ */

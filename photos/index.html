@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>中秋卡肉趴｜照片牆</title>
+<style>
+/* ============================================================
+   Same paper, ink and red as the attendance page, so the two read
+   as one event. Light only, like that page: the palette is a
+   letterpress flyer and has no dark rendition.
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  --background:          38 44% 94%;
+  --foreground:          222 42% 23%;
+  --muted:               38 28% 88%;
+  --muted-foreground:    222 16% 44%;
+  --border:              222 22% 74%;
+  --primary:             4 68% 51%;
+  --primary-foreground:  38 46% 96%;
+  --ring:                4 68% 51%;
+  --destructive:         4 68% 44%;
+  --radius:              0.25rem;
+
+  --paper:#F8F2E4; --paper2:#EFE7D5;
+  --navy:#1F3A76; --red:#D63B31;
+  --slab:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Segoe UI",sans-serif;
+
+  --col:     38rem;   /* the text column, same as the attendance page */
+  --gallery: 64rem;   /* the grid gets more room: five across wants it */
+}
+
+/* Aged paper, copied from the attendance page. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background:
+    repeating-linear-gradient(118deg,
+      rgba(150,110,70,.030) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-62deg,
+      rgba(150,110,70,.022) 0 1px, transparent 1px 11px),
+    radial-gradient(60% 45% at 18% 12%, rgba(190,150,100,.11), transparent 70%),
+    radial-gradient(55% 50% at 85% 82%, rgba(190,150,100,.10), transparent 70%),
+    linear-gradient(180deg, var(--paper) 0%, #F4EDDE 52%, var(--paper2) 100%);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+html.lb-open { overflow: hidden; }
+body {
+  margin: 0;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---------- Masthead ----------
+   The poster's top three lines at a smaller size: this page is for
+   looking at photos, so the artwork gets one screenful less. */
+.masthead {
+  max-width: var(--col); margin: 0 auto;
+  padding: 2.75rem 1rem 0;
+  text-align: center;
+}
+.masthead .join {
+  font-family: var(--slab); font-weight: 800; color: var(--red);
+  font-size: 0.75rem; letter-spacing: 0.32em; text-indent: 0.32em;
+  white-space: nowrap;
+}
+.masthead .rules {
+  margin-top: 0.55rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.7rem;
+}
+.masthead .rules .bar { flex: 1; max-width: 7rem; height: 3px; background: var(--navy); }
+.masthead .rules .stripe { display: grid; gap: 3px; }
+.masthead .rules .stripe i { display: block; width: 1.6rem; height: 3px; background: var(--red); }
+.masthead .rules .mid {
+  font-family: var(--slab); font-weight: 900; color: var(--navy);
+  font-size: 1.125rem; letter-spacing: 0.22em; text-indent: 0.22em;
+  white-space: nowrap;
+}
+/* The distressed red name, same scratch gradient as the poster. */
+.masthead h1 {
+  margin: 0.4rem 0 0;
+  font-weight: 900; font-size: clamp(3rem, 15vw, 5rem);
+  line-height: 1.05; letter-spacing: 0.04em;
+  color: transparent;
+  background:
+    repeating-linear-gradient(74deg, rgba(255,255,255,.55) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(-16deg, rgba(255,255,255,.40) 0 1px, transparent 1px 9px),
+    linear-gradient(180deg, var(--red) 0%, #C0322A 100%);
+  -webkit-background-clip: text; background-clip: text;
+}
+
+.lede {
+  max-width: var(--col); margin: 1.25rem auto 0; padding: 0 1rem;
+  text-align: center; color: hsl(var(--muted-foreground));
+}
+.lede p { margin: 0 0 0.4rem; text-wrap: pretty; }
+.lede .main { color: hsl(var(--foreground)); font-weight: 600; }
+.lede .fine { font-size: 0.8125rem; }
+.lede a { color: hsl(var(--primary)); font-weight: 600; text-underline-offset: 0.2em; }
+
+/* ---------- Gallery ---------- */
+main {
+  max-width: var(--gallery); margin: 2rem auto 0;
+  padding: 0 1rem 9rem;   /* the bottom clears the upload dock */
+}
+.gallery-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
+  padding-top: 0.75rem; margin-bottom: 0.75rem;
+  border-top: 1px solid hsl(var(--border));
+  font-size: 0.8125rem; color: hsl(var(--muted-foreground));
+}
+.gallery-head .bad { color: hsl(var(--destructive)); font-weight: 500; }
+button.link {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer;
+}
+button.link:hover { color: hsl(var(--foreground)); }
+
+/* Five across at every width, left to right then top to bottom. Tiles
+   are square crops so the rows line up whatever shape the photos are;
+   the whole picture is one tap away in the viewer. */
+.grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: clamp(3px, 0.9vw, 10px);
+}
+.tile {
+  position: relative; overflow: hidden;
+  border-radius: 2px;
+  background: hsl(var(--muted));
+}
+/* The square comes from the button, a plain block inside the grid cell,
+   rather than from the grid item itself: aspect-ratio on items that
+   another layout is also sizing is where WebKit and Chromium have
+   disagreed on this site before. */
+.tile > button {
+  display: block; width: 100%; aspect-ratio: 1;
+  margin: 0; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; cursor: zoom-in;
+}
+.tile > button:focus-visible { outline: 3px solid hsl(var(--ring)); outline-offset: -3px; }
+.tile img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  transition: opacity .2s;
+}
+
+/* Picked in this visit and not yet in the repository: dimmed, with a
+   spinner on the one actually going up. */
+.tile[data-state="preparing"] img,
+.tile[data-state="queued"] img,
+.tile[data-state="sending"] img { opacity: 0.45; }
+.tile[data-state="sending"]::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 1.5rem; height: 1.5rem; margin: -0.75rem 0 0 -0.75rem;
+  border: 2px solid rgba(31,58,118,.22); border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  pointer-events: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.tile[data-state="failed"] img { opacity: 0.3; }
+.tile[data-state="failed"] > button { cursor: pointer; }
+.tile .badge {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  padding: 0.1rem 0.5rem; border-radius: var(--radius);
+  background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+  font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+  pointer-events: none;
+}
+.tile .badge:empty { display: none; }
+
+.empty {
+  margin: 3rem 0 0; text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ---------- Upload dock ----------
+   Pinned to the bottom like the attendance page's choices: on a long
+   grid the button would otherwise be a long scroll back up. */
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 2rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg,
+    rgba(248,242,228,0) 0,
+    rgba(248,242,228,.80) 30%,
+    rgba(248,242,228,.96) 60%);
+  /* The faded top must not swallow taps meant for the tiles under it. */
+  pointer-events: none;
+}
+.dock > * { pointer-events: auto; }
+.dock .note {
+  margin: 0; max-width: var(--col); text-align: center;
+  font-size: 0.8125rem; color: hsl(var(--muted-foreground));
+  text-wrap: pretty;
+}
+.dock .note.bad { color: hsl(var(--destructive)); font-weight: 500; }
+.pick {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-width: 12rem; height: 3rem; padding: 0 1.75rem;
+  border-radius: var(--radius);
+  background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+  font-size: 1rem; font-weight: 800; letter-spacing: 0.08em;
+  box-shadow: 0 8px 20px -10px rgba(214,59,49,.8);
+  cursor: pointer; user-select: none;
+}
+.pick:hover { opacity: 0.92; }
+.pick:focus-within { box-shadow: 0 0 0 3px hsl(var(--ring) / 0.35); }
+.pick svg { width: 1.125rem; height: 1.125rem; }
+.pick input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+}
+
+/* Dragging files over the window on a computer. */
+.dropzone {
+  position: fixed; inset: 0.75rem; z-index: 40;
+  display: grid; place-content: center;
+  border: 3px dashed var(--red); border-radius: 0.5rem;
+  background: rgba(248,242,228,.9);
+  color: var(--red); font-size: 1.5rem; font-weight: 800; letter-spacing: 0.1em;
+  pointer-events: none;
+}
+body:not(.dropping) .dropzone { display: none; }
+
+/* ---------- Viewer ---------- */
+.lb {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  background: rgba(14,22,42,.95);
+  color: #F6EFDF;
+}
+.lb-stage {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 3.5rem 0.5rem 0;
+  touch-action: pan-y pinch-zoom;
+}
+.lb-stage img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  user-select: none; -webkit-user-drag: none;
+}
+.lb-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.25rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  font-size: 0.875rem;
+}
+.lb-bar a { color: inherit; text-underline-offset: 0.2em; }
+.lb button {
+  position: absolute;
+  display: grid; place-content: center;
+  width: 3rem; height: 3rem; padding: 0; border: 0; border-radius: 50%;
+  background: rgba(246,239,223,.12); color: inherit;
+  cursor: pointer;
+}
+.lb button:hover { background: rgba(246,239,223,.22); }
+.lb button:focus-visible { outline: 2px solid #F6EFDF; outline-offset: 2px; }
+.lb button svg { width: 1.375rem; height: 1.375rem; }
+.lb .close { top: 0.5rem; right: 0.5rem; }
+.lb .prev, .lb .next { top: 50%; margin-top: -1.5rem; }
+.lb .prev { left: 0.5rem; }
+.lb .next { right: 0.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .tile[data-state="sending"]::after { animation-duration: 2.4s; }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="join">MID-AUTUMN&nbsp;BBQ&nbsp;PARTY</div>
+  <div class="rules">
+    <span class="stripe"><i></i><i></i></span>
+    <span class="bar"></span>
+    <span class="mid">照片牆</span>
+    <span class="bar"></span>
+    <span class="stripe"><i></i><i></i></span>
+  </div>
+  <h1>中秋烤肉</h1>
+</header>
+
+<div class="lede" id="lede"></div>
+
+<main>
+  <div class="gallery-head">
+    <span id="info" role="status"></span>
+    <button type="button" class="link" id="refresh"></button>
+  </div>
+  <ul class="grid" id="grid"></ul>
+  <p class="empty" id="empty" hidden></p>
+</main>
+
+<div class="dock">
+  <p class="note" id="note" role="status"></p>
+  <label class="pick">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+         stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span id="pick-label"></span>
+    <input type="file" id="file" accept="image/*" multiple>
+  </label>
+</div>
+
+<div class="dropzone" id="dropzone" aria-hidden="true"></div>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" hidden>
+  <div class="lb-stage" id="lb-stage"><img id="lb-img" alt=""></div>
+  <div class="lb-bar">
+    <span id="lb-pos"></span>
+    <a id="lb-dl" target="_blank" rel="noopener"></a>
+  </div>
+  <button type="button" class="close" id="lb-close">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <button type="button" class="prev" id="lb-prev">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <button type="button" class="next" id="lb-next">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+</div>
+
+<script>
+/* ============================================================
+   1. Where photos are written and read.
+
+      Uploads go to the same Apps Script deployment as the attendance
+      page, which calls its "photo" action. It holds the GitHub token,
+      so nothing secret is in this file, and commits each photo into
+      REPO. The list of photos is read straight from GitHub's public
+      API, which needs no token for a public repository.
+   ============================================================ */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzp-tErARlbGJ30wrcv4yZpr_0lbvy4uhRp2IzFeYQjfJq9HI2Tvf3tMaK1wBF8R2lk/exec";
+const REPO = { owner: "quotationyy", name: "2026moonfestbbq", branch: "main", dir: "photos" };
+
+/* ============================================================
+   2. 頁面文字。要改內容改這裡就好。
+   ============================================================ */
+const PAGE = {
+  lede: "那晚拍的照片都丟這裡，大家一起看。一次可以選很多張。",
+  notes: [
+    ["照片會公開在這一頁，拿到連結的人都看得到。上傳前會自動縮小，並拿掉照片裡的拍攝地點。"],
+    ["傳錯了想刪掉？", "IG 私訊我們", "https://www.instagram.com/quotation.yy/"]
+  ]
+};
+
+const MSG = {
+  pick:        "上傳照片",
+  loading:     "載入中…",
+  count:       n => `${n} 張照片`,
+  empty:       "還沒有照片，當第一個上傳的人吧。",
+  refresh:     "重新整理",
+  loadFailed:  "照片清單讀不到，等一下再按「重新整理」。",
+  rateLimited: "GitHub 暫時限制了讀取次數，過一陣子再按「重新整理」。",
+  sending:     (done, total) => `上傳中 ${done} / ${total}，先別關掉這頁`,
+  sent:        n => `傳好了，謝謝你的 ${n} 張照片！`,
+  failedCount: n => `（${n} 張沒傳上去）`,
+  retryTile:   "重試",
+  removeTile:  "移除",
+  unreadable:  "有照片讀不出來（可能是 HEIC 格式），換一張或先轉成 JPG。點那張可以移除。",
+  notReady:    "上傳功能還沒準備好，麻煩私訊跟我們說一聲。",
+  stale:       "系統還沒更新完，照片沒有傳上去。麻煩私訊跟我們說一聲。",
+  offline:     "網路好像斷了，連上之後點那張照片再試一次。",
+  busy:        "現在上傳的人有點多，等一下點那張照片再試一次。",
+  failed:      e => `沒傳上去：${e}　點那張照片可以再試一次。`,
+  drop:        "放開就上傳",
+  photo:       "照片",
+  close:       "關閉",
+  prev:        "上一張",
+  next:        "下一張",
+  download:    "下載"
+};
+
+/* ============================================================
+   3. 排列與尺寸。
+   ============================================================ */
+/* true：最新的在左上角，剛傳的照片馬上看得到。false：照上傳順序，
+   最舊的在左上角。 */
+const NEWEST_FIRST = true;
+
+/* What the page sends. A phone photo is 3-8 MB; 2048px on the long
+   edge is sharp on any screen and about half a megabyte. The thumbnail
+   is what the grid loads -- fifty of the full ones would be 25 MB
+   before anyone tapped anything. */
+const SIZE = {
+  full:  { long: 2048, quality: 0.85 },
+  thumb: { short: 480, long: 960, quality: 0.78 }
+};
+
+/* ============================================================
+   以下不需要修改。
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const grid = $("grid");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+$("lede").innerHTML =
+  `<p class="main">${esc(PAGE.lede)}</p>` +
+  PAGE.notes.map(([t, link, href]) => `<p class="fine">${esc(t)}${link
+    ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(link)}</a>`
+    : ""}</p>`).join("");
+$("pick-label").textContent = MSG.pick;
+$("refresh").textContent = MSG.refresh;
+$("empty").textContent = MSG.empty;
+$("dropzone").textContent = MSG.drop;
+$("lb-dl").textContent = MSG.download;
+$("lb-close").setAttribute("aria-label", MSG.close);
+$("lb-prev").setAttribute("aria-label", MSG.prev);
+$("lb-next").setAttribute("aria-label", MSG.next);
+
+/* Where one stored file can be fetched from, best first. The relative
+   path is this site on GitHub Pages; raw.githubusercontent.com has the
+   file the moment it is committed, while Pages takes a minute or so to
+   rebuild, so it catches photos someone else uploaded just now -- and
+   covers opening this file straight off disk. */
+const sources = (sub, name) => [
+  `${sub}/${name}`,
+  `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/${REPO.branch}/${REPO.dir}/${sub}/${name}`
+];
+
+/* Point an <img> at a list of URLs and fall through them on error.
+   A tile whose thumbnail is missing ends up on the full image. */
+function setSources(img, list) {
+  const key = list.join(" ");
+  if (img.dataset.sources === key) return;
+  img.dataset.sources = key;
+  let i = 0;
+  img.onerror = () => { if (++i < list.length) img.src = list[i]; };
+  if (list.length) img.src = list[0]; else img.removeAttribute("src");
+}
+
+/* ------------------------------------------------------------
+   Every tile on the page. One already in the repository is keyed by
+   its file name. One picked during this visit gets a temporary key
+   and keeps it after the server names it, so its tile -- showing the
+   copy made right here -- never has to reload.
+
+   state: preparing -> queued -> sending -> done, or failed.
+   ------------------------------------------------------------ */
+const items = new Map();
+let seq = 0;
+let loaded = false;
+
+function stored(name) {
+  return { key: name, name, seq: 0, local: false, state: "done",
+           thumb: sources("thumb", name).concat(sources("img", name)),
+           full:  sources("img", name) };
+}
+
+/* Named photos sort by name, which the server builds from the upload
+   time. Photos still on their way up sit where they will land: at the
+   front when newest comes first, at the end otherwise. */
+function ordered() {
+  const named = [], pending = [];
+  for (const it of items.values()) (it.name ? named : pending).push(it);
+  named.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  pending.sort((a, b) => a.seq - b.seq);
+  return NEWEST_FIRST ? pending.reverse().concat(named.reverse())
+                      : named.concat(pending);
+}
+
+function tile(it) {
+  const li = document.createElement("li");
+  li.className = "tile";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  const img = document.createElement("img");
+  img.alt = "";
+  img.loading = "lazy";
+  img.decoding = "async";
+  const badge = document.createElement("span");
+  badge.className = "badge";
+  btn.append(img);
+  li.append(btn, badge);
+  btn.addEventListener("click", () => {
+    if (it.state !== "failed") return view(it);
+    if (it.fatal) return discard(it);
+    retry(it);
+  });
+  Object.assign(it, { el: li, img, btn, badge });
+  return li;
+}
+
+function paint(it) {
+  if (!it.el) return;
+  it.el.dataset.state = it.state;
+  setSources(it.img, it.thumb);
+  it.badge.textContent = it.state !== "failed" ? ""
+                       : it.fatal ? MSG.removeTile : MSG.retryTile;
+  it.btn.setAttribute("aria-label",
+    it.state === "failed" ? `${it.badge.textContent}：${it.error}` : MSG.photo);
+}
+
+function layout() {
+  const list = ordered();
+  list.forEach((it, i) => {
+    const li = it.el || tile(it);
+    paint(it);
+    if (grid.children[i] !== li) grid.insertBefore(li, grid.children[i] || null);
+  });
+  const named = list.filter(it => it.name).length;
+  if (loaded && !listProblem) {
+    $("info").className = "";
+    $("info").textContent = MSG.count(named);
+  }
+  $("empty").hidden = !(loaded && list.length === 0 && !listProblem);
+}
+
+/* ------------------------------------------------------------
+   The list of photos, from GitHub's public API.
+
+   Unauthenticated, that allows 60 requests an hour per network --
+   plenty for opening the page now and then, and the reason this does
+   not poll. It reloads when the page comes back into view after a
+   minute away, after a batch of uploads finishes, and on the refresh
+   link.
+   ------------------------------------------------------------ */
+let lastLoad = 0;
+let listProblem = "";
+
+async function load() {
+  lastLoad = Date.now();
+  if (!loaded) $("info").textContent = MSG.loading;
+  const url = `https://api.github.com/repos/${REPO.owner}/${REPO.name}` +
+              `/contents/${REPO.dir}/img?ref=${REPO.branch}&t=${Date.now()}`;
+  let names;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.status === 404) {
+      names = [];   // nobody has uploaded yet, so the folder does not exist
+    } else if (res.status === 403 || res.status === 429) {
+      throw new Error(MSG.rateLimited);
+    } else if (!res.ok) {
+      throw new Error(MSG.loadFailed);
+    } else {
+      names = (await res.json())
+        .filter(f => f.type === "file" && /^[\w.-]+\.jpe?g$/i.test(f.name))
+        .map(f => f.name);
+    }
+  } catch (err) {
+    listProblem = err.message && err.message !== "Failed to fetch"
+      ? err.message : MSG.loadFailed;
+    $("info").className = "bad";
+    $("info").textContent = listProblem;
+    loaded = true;
+    layout();
+    return;
+  }
+  listProblem = "";
+  merge(names);
+  loaded = true;
+  layout();
+}
+
+function merge(names) {
+  const want = new Set(names);
+  const have = new Set();
+  for (const [key, it] of items) {
+    if (!it.name) continue;
+    have.add(it.name);
+    // Deleted from the repository since the last look. Photos uploaded
+    // during this visit stay: the API can lag a commit by a minute.
+    if (!it.local && !want.has(it.name)) {
+      if (it.el) it.el.remove();
+      items.delete(key);
+    }
+  }
+  for (const name of names) if (!have.has(name)) items.set(name, stored(name));
+}
+
+$("refresh").addEventListener("click", load);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (Date.now() - lastLoad > 60000) load();
+  if (busy()) { wakeLock = null; keepAwake(true); }
+});
+
+/* ------------------------------------------------------------
+   Uploading.
+
+   Two lines, each one photo at a time. Preparing reads the file,
+   scales it down and makes the thumbnail -- one at a time because a
+   phone holding thirty decoded 48-megapixel images runs out of memory.
+   Sending posts it to the Apps Script, one at a time because the
+   server commits one at a time anyway, and because it keeps photos
+   landing in the order they were picked.
+   ------------------------------------------------------------ */
+function line() {
+  let tail = Promise.resolve();
+  return task => {
+    const run = tail.then(() => task());
+    tail = run.catch(() => {});
+    return run;
+  };
+}
+const prepLine = line();
+const sendLine = line();
+let batchFrom = 1;   // first seq of the current batch, for the progress count
+
+function add(files) {
+  const picked = [...files].filter(f =>
+    /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name));
+  if (!picked.length) return;
+  if (!busy()) batchFrom = seq + 1;
+  for (const file of picked) {
+    const it = { key: `local-${++seq}`, seq, local: true, state: "preparing",
+                 file, thumb: [], full: [] };
+    items.set(it.key, it);
+    track(it);
+  }
+  layout();
+  dock();
+}
+
+function track(it) {
+  prepLine(() => prepare(it))
+    .then(() => sendLine(() => send(it)))
+    .catch(err => fail(it, err));
+}
+
+function retry(it) {
+  it.state = it.blobs ? "queued" : "preparing";
+  it.error = "";
+  paint(it);
+  track(it);
+  dock();
+}
+
+function discard(it) {
+  if (it.el) it.el.remove();
+  items.delete(it.key);
+  layout();
+  dock();
+}
+
+/* Read the file, scale it, and make both JPEGs. Re-encoding through a
+   canvas also drops EXIF -- the GPS position along with it -- and the
+   browser has already applied the EXIF rotation when drawing. */
+async function prepare(it) {
+  if (it.blobs) return;
+  const url = URL.createObjectURL(it.file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject({ fatal: true });
+      im.src = url;
+    });
+    const w0 = img.naturalWidth, h0 = img.naturalHeight;
+    if (!w0 || !h0) throw { fatal: true };
+
+    const f = Math.min(1, SIZE.full.long / Math.max(w0, h0));
+    const t = Math.min(1, SIZE.thumb.short / Math.min(w0, h0),
+                          SIZE.thumb.long / Math.max(w0, h0));
+    const big   = scale(img, w0, h0, Math.round(w0 * f), Math.round(h0 * f));
+    const small = scale(big, big.width, big.height,
+                        Math.max(1, Math.round(w0 * t)), Math.max(1, Math.round(h0 * t)));
+    const full  = await jpeg(big, SIZE.full.quality);
+    const thumb = await jpeg(small, SIZE.thumb.quality);
+    free(big); free(small);
+
+    it.blobs = { full, thumb };
+    it.full  = [URL.createObjectURL(full)];
+    it.thumb = [URL.createObjectURL(thumb)];
+    it.file  = null;
+    it.state = "queued";
+    paint(it);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/* Halve first, until one more draw covers the rest. A single large
+   reduction reads only a few source pixels per output pixel and comes
+   out jagged, in Safari especially. */
+function scale(src, sw, sh, w, h) {
+  let cur = src, cw = sw, ch = sh;
+  while (cw > w * 2 && ch > h * 2) {
+    const next = draw(cur, Math.round(cw / 2), Math.round(ch / 2));
+    if (cur !== src) free(cur);
+    cur = next; cw = next.width; ch = next.height;
+  }
+  const out = draw(cur, w, h, true);
+  if (cur !== src) free(cur);
+  return out;
+}
+
+function draw(src, w, h, opaque) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  const ctx = c.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  // JPEG has no transparency; without a fill, see-through parts of a
+  // PNG would come out black.
+  if (opaque) { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h); }
+  ctx.drawImage(src, 0, 0, w, h);
+  return c;
+}
+
+/* iOS holds on to canvas memory until a canvas is shrunk to nothing. */
+function free(c) { c.width = c.height = 0; }
+
+function jpeg(canvas, quality) {
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error("encode failed")),
+                  "image/jpeg", quality));
+}
+
+function base64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+/* Worth trying again on our own; anything else waits for a tap. */
+const TRANSIENT = new Set(["busy", "github_busy", "network"]);
+const BACKOFF = [4000, 15000];
+
+async function send(it) {
+  it.state = "sending";
+  paint(it);
+  dock();
+  const body = JSON.stringify({
+    action: "photo",
+    full:  await base64(it.blobs.full),
+    thumb: await base64(it.blobs.thumb)
+  });
+  for (let attempt = 0; ; attempt++) {
+    let out;
+    try {
+      // text/plain keeps this a "simple" CORS request, so the browser
+      // skips the preflight that Apps Script cannot answer.
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body
+      });
+      out = await res.json();
+    } catch (err) {
+      out = { ok: false, code: "network", error: err.message };
+    }
+    if (out.ok) {
+      it.name = out.name;
+      it.state = "done";
+      it.blobs = null;
+      layout();
+      dock();
+      return;
+    }
+    if (!TRANSIENT.has(out.code) || attempt >= BACKOFF.length) throw out;
+    await sleep(BACKOFF[attempt]);
+  }
+}
+
+function fail(it, err) {
+  err = err || {};
+  it.state = "failed";
+  it.fatal = !!err.fatal;
+  it.error = err.fatal ? MSG.unreadable
+           : err.code === "no_token" || err.code === "bad_token" ? MSG.notReady
+           : err.code === "unknown_action" ? MSG.stale
+           : err.code === "network" ? MSG.offline
+           : TRANSIENT.has(err.code) ? MSG.busy
+           : MSG.failed(err.error || err.message || "unknown error");
+  lastError = it.error;
+  paint(it);
+  dock();
+}
+
+/* ------------------------------------------------------------
+   The line above the button: progress while uploading, then either
+   thanks or what went wrong.
+   ------------------------------------------------------------ */
+let lastError = "";
+let wasBusy = false;
+
+function busy() {
+  for (const it of items.values()) {
+    if (it.local && (it.state === "preparing" || it.state === "queued" ||
+                     it.state === "sending")) return true;
+  }
+  return false;
+}
+
+function dock() {
+  const note = $("note");
+  const mine = [...items.values()].filter(it => it.local);
+  const batch = mine.filter(it => it.seq >= batchFrom);
+  const failed = mine.filter(it => it.state === "failed").length;
+  const finished = batch.filter(it => it.state === "done" || it.state === "failed").length;
+  const now = busy();
+
+  if (now) {
+    note.className = "note";
+    note.textContent = MSG.sending(finished, batch.length);
+  } else if (failed) {
+    note.className = "note bad";
+    note.textContent = lastError + MSG.failedCount(failed);
+  } else if (batch.length) {
+    note.className = "note";
+    note.textContent = MSG.sent(batch.filter(it => it.state === "done").length);
+  } else {
+    note.textContent = "";
+  }
+
+  keepAwake(now);
+  // A batch just finished: look for whatever anyone else added meanwhile.
+  if (wasBusy && !now) load();
+  wasBusy = now;
+}
+
+/* Keep a phone's screen on while photos are going up: a locked phone
+   suspends the page and the rest of the batch with it. */
+let wakeLock = null;
+function keepAwake(on) {
+  if (on && !wakeLock && "wakeLock" in navigator &&
+      document.visibilityState === "visible") {
+    wakeLock = navigator.wakeLock.request("screen").catch(() => null);
+  } else if (!on && wakeLock) {
+    wakeLock.then(l => l && l.release()).catch(() => {});
+    wakeLock = null;
+  }
+}
+
+addEventListener("beforeunload", e => {
+  if (busy()) { e.preventDefault(); e.returnValue = ""; }
+});
+
+$("file").addEventListener("change", e => {
+  add(e.target.files);
+  e.target.value = "";   // picking the same photo again should still fire
+});
+
+/* Drag and drop on a computer. */
+let dragDepth = 0;
+const hasFiles = e => [...(e.dataTransfer && e.dataTransfer.types || [])].includes("Files");
+document.addEventListener("dragenter", e => {
+  if (!hasFiles(e)) return;
+  dragDepth++;
+  document.body.classList.add("dropping");
+});
+document.addEventListener("dragleave", e => {
+  if (!hasFiles(e)) return;
+  if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove("dropping"); }
+});
+document.addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+document.addEventListener("drop", e => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove("dropping");
+  add(e.dataTransfer.files);
+});
+
+/* ------------------------------------------------------------
+   The viewer. It takes a history entry while open, so the back
+   gesture on a phone closes the photo instead of leaving the page.
+   ------------------------------------------------------------ */
+const lb = { list: [], i: 0, pushed: false, returnTo: null };
+
+function view(it) {
+  lb.list = ordered().filter(x => x.full.length);
+  lb.i = lb.list.indexOf(it);
+  if (lb.i < 0) return;
+  lb.returnTo = document.activeElement;
+  $("lb").hidden = false;
+  document.documentElement.classList.add("lb-open");
+  const several = lb.list.length > 1;
+  $("lb-prev").hidden = $("lb-next").hidden = !several;
+  if (!lb.pushed) { history.pushState({ viewer: true }, ""); lb.pushed = true; }
+  show();
+  $("lb-close").focus();
+}
+
+function show() {
+  const n = lb.list.length;
+  const it = lb.list[lb.i];
+  setSources($("lb-img"), it.full);
+  $("lb-pos").textContent = `${lb.i + 1} / ${n}`;
+  $("lb-dl").href = it.full[0];
+  $("lb-dl").download = it.name || "photo.jpg";
+  // Warm the neighbours, so the next swipe is instant.
+  for (const d of [-1, 1]) {
+    const nb = lb.list[(lb.i + d + n) % n];
+    if (nb && nb !== it) new Image().src = nb.full[0];
+  }
+}
+
+/* Download whichever copy actually loaded -- the Pages one may not
+   exist yet for a photo uploaded a moment ago. */
+$("lb-img").addEventListener("load", e => { $("lb-dl").href = e.target.currentSrc; });
+
+function step(d) {
+  const n = lb.list.length;
+  if (n < 2) return;
+  lb.i = (lb.i + d + n) % n;
+  show();
+}
+
+function close(fromHistory) {
+  if ($("lb").hidden) return;
+  $("lb").hidden = true;
+  document.documentElement.classList.remove("lb-open");
+  if (lb.pushed) {
+    lb.pushed = false;
+    if (!fromHistory) history.back();
+  }
+  if (lb.returnTo && lb.returnTo.isConnected) lb.returnTo.focus();
+}
+
+$("lb-close").addEventListener("click", () => close(false));
+$("lb-prev").addEventListener("click", () => step(-1));
+$("lb-next").addEventListener("click", () => step(1));
+/* A tap on the dark around the photo closes it -- unless the tap was the
+   end of a swipe, which fires a click there too. */
+$("lb-stage").addEventListener("click", e => {
+  if (swiped) { swiped = false; return; }
+  if (e.target === e.currentTarget) close(false);
+});
+addEventListener("popstate", () => close(true));
+document.addEventListener("keydown", e => {
+  if ($("lb").hidden) return;
+  if (e.key === "Escape") close(false);
+  else if (e.key === "ArrowLeft") step(-1);
+  else if (e.key === "ArrowRight") step(1);
+});
+
+/* Swipe sideways to move between photos. */
+let swipe = null, swiped = false;
+$("lb-stage").addEventListener("pointerdown", e => {
+  swipe = { x: e.clientX, y: e.clientY };
+  swiped = false;
+});
+$("lb-stage").addEventListener("pointerup", e => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    swiped = true;
+    step(dx < 0 ? 1 : -1);
+  }
+});
+$("lb-stage").addEventListener("pointercancel", () => { swipe = null; });
+
+load();
+</script>
+</body>
+</html>

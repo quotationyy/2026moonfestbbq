@@ -12,6 +12,7 @@ visitor's browser  ──POST JSON──▶  Apps Script Web App  ──appends 
 | Piece | What it does | Cost |
 |---|---|---|
 | `index.html` | The whole page. Static file — host anywhere. | free |
+| `photos/index.html` | The photo wall: guests upload, everyone sees. | free |
 | `Code.gs` | The API endpoint. Runs inside Google. | free |
 | Google Sheet | The database, plus charts and CSV export for free. | free |
 
@@ -80,6 +81,64 @@ deliberate.
 
 ---
 
+## The photo wall
+
+`photos/index.html`, live at
+<https://quotationyy.github.io/2026moonfestbbq/photos/>. Guests pick
+photos, the page uploads them, and every photo shows in a grid five
+across, newest first. Tapping one opens it full size.
+
+The photos are stored **in this repository**, under `photos/img/` (full
+size) and `photos/thumb/` (what the grid loads), and GitHub Pages serves
+them like any other file on the site.
+
+```
+guest's browser ──POST photo──▶ Apps Script ──commit via GitHub API──▶ this repo
+       ▲                         (holds the token)                        │
+       └──────────── lists photos/img, loads the files ◀──────────────────┘
+```
+
+A static page cannot write to GitHub by itself: that takes a token, and
+a token in a public HTML file is a token anyone can use to rewrite the
+repo. So the page posts to the same Apps Script that takes RSVPs, using
+its `photo` action. The token sits in that project's Script Properties,
+and the script makes the commit. Reading needs no token, because the
+repository is public.
+
+The photo code is part of `Code.gs` rather than a second `.gs` file in
+the project. Every `.gs` file in one Apps Script project shares a single
+global scope, so a second file with its own `doGet`/`doPost` would
+collide with the first, and only one of them would run.
+
+What happens to a photo on the way up:
+
+- **The page shrinks it first.** A phone photo is 3–8 MB; the page
+  re-encodes it as a JPEG of at most 2048px on the long edge (around
+  0.5 MB) plus a thumbnail of about 50 KB. Re-encoding also strips EXIF,
+  so **the GPS position in the photo never reaches the repo**.
+- **The server names it**, `20261002-213015-482-a1b2.jpg`: Taipei time
+  plus a random tail. The name is the sort order. Nothing the browser
+  sends ends up in a path.
+- **Each photo is two commits**, full size and then thumbnail, authored
+  by the account that owns the token.
+
+A photo appears on the uploader's screen at once, from the copy made in
+the browser. For everyone else, a new photo is in the list as soon as
+it is committed. The page loads it from `raw.githubusercontent.com`
+until the Pages rebuild catches up, about a minute later.
+
+Layout knobs are at the top of the script block: `NEWEST_FIRST` (set it
+to `false` to list oldest first) and `SIZE`. The wording is in `PAGE`
+and `MSG`.
+
+**Anyone with the link can upload.** The script only accepts JPEGs and
+caps their size, but there is no login. To take a photo down, delete
+it from both `photos/img/` and `photos/thumb/` in the GitHub web UI. It
+stays in git history; purging it from history means rewriting the
+history and force-pushing.
+
+---
+
 ## Setup — about 10 minutes, once
 
 ### 1. Create the Sheet and paste the backend
@@ -108,13 +167,14 @@ deliberate.
 Verify it: paste that URL into a browser tab. You should see
 
 ```json
-{"ok":true,"service":"survey","sheet":"Responses","actions":["submit","rsvp","read","delete"]}
+{"ok":true,"service":"survey","sheet":"Responses","actions":["submit","rsvp","photo","read","delete"],"photoReady":true}
 ```
 
 That `actions` list is how you tell a current deployment from a stale one
-without writing anything: if `rsvp` is missing, the live endpoint predates
-this page and will refuse its requests — and say so on the page rather
-than failing silently.
+without writing anything: if `rsvp` or `photo` is missing, the live
+endpoint predates that page and will refuse its requests — and say so on
+the page rather than failing silently. `photoReady` is `false` until the
+GitHub token from step 5 is in place.
 
 ### 3. Point the page at it
 
@@ -162,6 +222,35 @@ In the repo: **Settings ▸ Pages ▸ Source: Deploy from a branch**, branch
 Version: New version ▸ Deploy**, or the live endpoint keeps running the
 old code. Editing `index.html` just needs a `git push`.
 
+### 5. Let the script commit photos
+
+The photo wall needs a GitHub token that can write to this one
+repository, and nothing else.
+
+1. Signed in to GitHub as **`quotationyy`**: **Settings ▸ Developer
+   settings ▸ Personal access tokens ▸ Fine-grained tokens ▸ Generate
+   new token.**
+   - **Resource owner:** `quotationyy`
+   - **Expiration:** long enough to outlast the uploads. A month is plenty
+     for one party.
+   - **Repository access:** *Only select repositories* ▸ `2026moonfestbbq`
+   - **Permissions ▸ Repository permissions ▸ Contents:** *Read and write*
+     (Metadata: read-only is added automatically)
+2. Copy the token. GitHub shows it once.
+3. In the Apps Script editor: **Project Settings** (the gear) **▸ Script
+   Properties ▸ Add script property**, name `GITHUB_TOKEN`, value the
+   token. Save.
+4. Redeploy as a **new version** (see above). This first deploy after the
+   photo code went in asks for one more permission, *Connect to an
+   external service*, because the script now calls GitHub. Allow it.
+
+Check the `/exec` URL again: `photoReady` should now be `true`.
+
+When the token expires, uploads fail with a message asking guests to get
+in touch, and nothing is written. Generate a new token and replace the
+property value. No redeploy is needed for that, since the script reads
+the property on every request.
+
 ---
 
 ## Good to know
@@ -181,7 +270,18 @@ old code. Editing `index.html` just needs a `git push`.
 - **Spam:** there's a hidden honeypot field that silently drops bots.
   Enough for a low-traffic page.
 - **Quotas:** Apps Script allows ~20,000 executions/day on a free account.
-  A party will not come close.
+  A party will not come close. GitHub is the tighter limit for photos:
+  it allows about 500 writes an hour, and each photo takes two, so
+  about 250 photos an hour. Past that, uploads retry and then ask the
+  guest to try again later. Reading the photo list without a token is
+  limited to 60 requests an hour per network, which is why the page
+  does not poll.
+- **Pull before you push.** Every uploaded photo is a commit on `main`,
+  so once guests start uploading, a local checkout falls behind. Run
+  `git pull --rebase` before any `git push`, or the push is rejected.
+- **Size:** at about 0.55 MB a photo, a thousand photos is about half a
+  gigabyte. That is within GitHub's soft limits for a repo (1 GB) and
+  a Pages site (1 GB).
 - **`Couldn't send: Failed to fetch`** almost always means the
   deployment's access is not set to *Anyone*, or a redeploy is needed
   after editing `Code.gs`.
